@@ -77,7 +77,7 @@ ulangi simulasi. Kalau terjadi galat, tidak ada yang tersimpan sama sekali.
 ## 5. Alihkan di Pusat
 
 ```bash
-cd /var/www/pusat-sekolah && sudo -u www-data php artisan pusat:alihkan-absensi jurnal --nonaktifkan-lama
+cd /var/www/pusat-sekolah && sudo -u www-data php artisan pusat:alihkan-absensi --nonaktifkan-lama
 ```
 
 Perintah ini melakukan tiga hal:
@@ -132,7 +132,7 @@ setidaknya satu semester.
 Kalau ada masalah sebelum VM Absensi dimatikan:
 
 ```bash
-cd /var/www/pusat-sekolah && sudo -u www-data php artisan pusat:alihkan-absensi jurnal --balik   # server Pusat
+cd /var/www/pusat-sekolah && sudo -u www-data php artisan pusat:alihkan-absensi --balik   # server Pusat
 cd /var/www/absensi && sudo -u www-data php artisan up                                           # server Absensi
 ```
 
