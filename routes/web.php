@@ -52,6 +52,9 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
 
+    Route::get('/mengajar', [\App\Http\Controllers\MengajarController::class, 'index'])->name('mengajar');
+    Route::post('/mengajar', [\App\Http\Controllers\MengajarController::class, 'store'])->middleware('throttle:30,1')->name('mengajar.store');
+    Route::delete('/mengajar/{jurnal}', [\App\Http\Controllers\MengajarController::class, 'destroy'])->name('mengajar.destroy');
     Route::get('/absensi', [AttendanceController::class, 'index'])->name('attendance');
     Route::post('/absensi', [AttendanceController::class, 'store'])->name('attendance.store');
     Route::post('/absensi/hapus', [AttendanceController::class, 'destroy'])->name('attendance.destroy');

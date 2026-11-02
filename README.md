@@ -1,4 +1,6 @@
-# Absensi Siswa — SMK Islam Bustanul Ulum Pakusari (Laravel 13)
+# Jurnal Guru (jurnal-pusat)
+
+Aplikasi Absensi Siswa yang dikembangkan menjadi **Jurnal Guru**: satu halaman **Mengajar** per pertemuan berisi jurnal (materi, kegiatan, catatan, rencana berikutnya) dan absensi mapel. Fitur absensi, nilai, dan integrasi Pusat Sekolah tetap sama.
 
 
 > **Produksi:** urutan lengkap Pusat → aplikasi ada di [runbook Pusat](https://github.com/andieawan/pusat-sekolah/blob/main/docs/PRODUKSI.md). Cek kesiapan server kapan saja: `php artisan absensi:periksa`.

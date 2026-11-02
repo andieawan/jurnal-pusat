@@ -438,3 +438,18 @@
   });
   window.addEventListener('resize', function () { Array.prototype.forEach.call(bars, cek); });
 })();
+
+// Jurnal (Mengajar): tanggal / jam ke- langsung menampilkan pertemuan itu.
+(function () {
+  document.querySelectorAll('input[data-auto]').forEach(function (i) {
+    i.addEventListener('change', function () { if (i.form && (!i.pattern || i.checkValidity())) i.form.submit(); });
+  });
+})();
+(function () {
+  document.querySelectorAll('[data-isi-materi]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = document.getElementById('materi');
+      if (t) { t.value = b.getAttribute('data-isi-materi'); t.focus(); t.dispatchEvent(new Event('input', { bubbles: true })); }
+    });
+  });
+})();
