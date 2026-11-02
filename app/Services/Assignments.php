@@ -1,0 +1,102 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Pairing;
+use App\Models\SchoolClass;
+use App\Models\Subject;
+use App\Models\User;
+use Illuminate\Support\Collection;
+
+/** Kelas & mapel yang boleh dipilih seorang guru pada form absensi/nilai. */
+class Assignments
+{
+    public static function classes(User $u, bool $waliOnly): Collection
+    {
+        $all = SchoolClass::orderBy('name')->get();
+        if ($u->isAdmin()) {
+            return $all;
+        }
+        if ($waliOnly) {
+            return $all->where('id', $u->kelas_wali_id)->values();
+        }
+        $ids = array_merge(array_map('intval', $u->classes ?? []), Pairing::where('user_id', $u->id)->pluck('class_id')->all());
+
+        return $all->whereIn('id', $ids)->values();
+    }
+
+    public static function subjects(User $u): Collection
+    {
+        $all = Subject::regular()->orderBy('name')->get();
+        if ($u->isAdmin()) {
+            return $all;
+        }
+        $ids = array_merge(array_map('intval', $u->subjects ?? []), Pairing::where('user_id', $u->id)->pluck('subject_id')->all());
+
+        return $all->whereIn('id', $ids)->values();
+    }
+
+    /**
+     * Mapel yang diajar guru pada SATU kelas — cerminan Rules::teacherAuthorization:
+     * pasangan (mapel+kelas) eksak, ditambah semua mapel akun bila kelas ada di daftar kelas akun.
+     */
+    public static function subjectsForClass(User $u, int $classId): Collection
+    {
+        $all = Subject::regular()->orderBy('name')->get();
+        if ($u->isAdmin()) {
+            return $all;
+        }
+        $ids = Pairing::where('user_id', $u->id)->where('class_id', $classId)->pluck('subject_id')->map(fn ($v) => (int) $v)->all();
+        if (in_array($classId, array_map('intval', $u->classes ?? []), true)) {
+            $ids = array_merge($ids, array_map('intval', $u->subjects ?? []));
+        }
+
+        return $all->whereIn('id', $ids)->values();
+    }
+
+    /**
+     * Kelas tempat guru mengajar SATU mapel — kebalikan subjectsForClass (aturan sama dengan
+     * Rules::teacherAuthorization): pasangan eksak, ditambah semua kelas akun bila mapel ada di daftar mapel akun.
+     */
+    public static function classesForSubject(User $u, int $subjectId): Collection
+    {
+        $all = SchoolClass::orderBy('name')->get();
+        if ($u->isAdmin()) {
+            return $all;
+        }
+        $ids = Pairing::where('user_id', $u->id)->where('subject_id', $subjectId)->pluck('class_id')->map(fn ($v) => (int) $v)->all();
+        if (in_array($subjectId, array_map('intval', $u->subjects ?? []), true)) {
+            $ids = array_merge($ids, array_map('intval', $u->classes ?? []));
+        }
+
+        return $all->whereIn('id', $ids)->values();
+    }
+
+    /** Peta mapel => [[id, nama], ...] kelasnya, untuk filter kelas di sisi klien. */
+    public static function classMap(User $u, Collection $subjects): array
+    {
+        $map = [];
+        foreach ($subjects as $s) {
+            $map[$s->id] = self::classesForSubject($u, $s->id)->map(fn ($c) => [$c->id, $c->name])->all();
+        }
+
+        return $map;
+    }
+
+    /**
+     * Kelas yang siswanya boleh dibuka di Riwayat Siswa. null = tanpa batas (admin, kepsek, BK, TU);
+     * selain itu (guru mapel / wali) hanya kelas yang diajar + kelas perwaliannya.
+     */
+    public static function studentClassIds(User $u): ?array
+    {
+        if ($u->hasRole('admin', 'superadmin', 'kepsek', 'bk', 'tu')) {
+            return null;
+        }
+        $ids = self::classes($u, false)->pluck('id')->map(fn ($v) => (int) $v)->all();
+        if ($u->kelas_wali_id) {
+            $ids[] = (int) $u->kelas_wali_id;
+        }
+
+        return array_values(array_unique($ids));
+    }
+}

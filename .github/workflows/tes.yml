@@ -1,0 +1,67 @@
+# Menjalankan tes otomatis setiap ada perubahan di main (dan bisa dijalankan manual dari tab Actions).
+# Hasil ringkas juga disimpan di cabang "hasil-tes" (berkas hasil.txt) agar mudah diperiksa.
+name: Tes
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['vendor/**', '**.md', 'docs/**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.5']
+    name: PHP ${{ matrix.php }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml, curl, zip, intl, bcmath, gd, pdo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Pasang dependensi (termasuk paket tes)
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Siapkan .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Jalankan tes
+        id: tes
+        run: |
+          set -o pipefail
+          vendor/bin/phpunit --colors=never --display-deprecations 2>&1 | tee hasil.txt
+
+      - name: Simpan hasil ke cabang hasil-tes
+        if: always() && github.event_name != 'pull_request'
+        run: |
+          [ -f hasil.txt ] || echo "Tes tidak berjalan (lihat log langkah sebelumnya)." > hasil.txt
+          cp hasil.txt /tmp/hasil-php${{ matrix.php }}.txt
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git reset -q --hard && git clean -qfdx
+          if git fetch -q origin hasil-tes; then
+            git checkout -q -B hasil-tes FETCH_HEAD
+          else
+            git checkout -q --orphan hasil-tes && git rm -rqf --cached . && git clean -qfdx
+            find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          fi
+          cp /tmp/hasil-php${{ matrix.php }}.txt "hasil-php${{ matrix.php }}.txt"
+          echo "${{ github.sha }} ${{ steps.tes.outcome }}" > "status-php${{ matrix.php }}.txt"
+          git add hasil-php*.txt status-php*.txt
+          git commit -m "Hasil tes PHP ${{ matrix.php }} untuk ${{ github.sha }}" || exit 0
+          for i in 1 2 3; do git push origin hasil-tes && break; git pull --rebase origin hasil-tes || true; done

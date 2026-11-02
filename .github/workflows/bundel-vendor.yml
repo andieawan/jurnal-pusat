@@ -1,0 +1,32 @@
+# Membuat folder vendor/ + composer.lock lalu meng-commit-nya ke repo ini,
+# supaya setelah `git clone` aplikasi langsung bisa dijalankan tanpa `composer install`.
+# Jalankan manual: tab Actions -> "Bundel vendor" -> Run workflow.
+# Ulangi setiap kali composer.json berubah.
+name: Bundel vendor
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, curl, zip, intl, gd, bcmath, pdo_mysql, pdo_sqlite, fileinfo
+          tools: composer:v2
+      - name: Pasang dependensi produksi
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+      - name: Commit vendor + composer.lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f vendor composer.lock
+          if git diff --cached --quiet; then echo "Tidak ada perubahan"; exit 0; fi
+          git commit -m "Bundel vendor (composer install --no-dev, PHP 8.3)"
+          git push
