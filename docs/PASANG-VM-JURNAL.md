@@ -79,19 +79,21 @@ TU_URL=https://tu.smkibupakusari.sch.id
 
 lalu `sudo -u www-data php artisan config:clear`.
 
-## 6. Asisten AI untuk Perangkat Ajar (opsional)
+## 6. Perangkat Ajar & asisten AI (opsional)
 
-Menu **Perangkat Ajar** menyusun modul ajar, LKPD, asesmen & rubrik, bahan bacaan, dan tindak lanjut. Tanpa AI, guru
-mendapat draf dari templat sesuai model pembelajaran. Agar AI ikut menulis isinya, buat kunci gratis di
-[Google AI Studio](https://aistudio.google.com/apikey) lalu isi di `.env` Jurnal:
+Alur: **tim MGMP** menyusun draf perangkat ajar (modul ajar, LKPD, asesmen & rubrik, bahan bacaan, tindak lanjut) per
+mapel + tingkat tiap semester, boleh dengan bahan ajar rujukan (PDF/DOCX/TXT), lalu menandainya *siap*. Guru yang
+mengampu mapel itu tinggal **mengambil** draf untuk kelasnya; salinan memakai nama, NIP, dan kelasnya sendiri.
 
-```ini
-GEMINI_API_KEY=...
-GEMINI_MODEL=gemini-flash-latest
-```
-
-lalu `sudo -u www-data php artisan config:clear`. Kunci hanya ada di server; guru tidak perlu kunci sendiri. Yang dikirim
-ke Google hanya data pembelajaran (mapel, topik, tujuan, model, dst.), tanpa nama guru atau siswa.
+- Anggota MGMP: di Pusat → Akun, beri peran **mgmp** di aplikasi Jurnal Guru (selain `guru`). Draf hanya bisa disusun
+  untuk mapel yang diampunya.
+- AI hanya dipakai untuk menyusun draf MGMP (sekali per draf, bukan per guru). Kunci API Gemini gratis dari
+  [Google AI Studio](https://aistudio.google.com/apikey), pilih salah satu:
+  - **Kunci sekolah:** isi `GEMINI_API_KEY=...` di `.env` lalu `sudo -u www-data php artisan config:clear`; dipakai semua MGMP.
+  - **Kunci pribadi:** biarkan `GEMINI_API_KEY` kosong; tiap anggota MGMP mengisi kuncinya sendiri di
+    Perangkat Ajar → **Kunci AI** (tersimpan terenkripsi di server).
+- Tanpa kunci, draf tetap bisa dibuat dari templat. Yang dikirim ke Google hanya data pembelajaran dan bahan rujukan,
+  tanpa nama guru atau siswa. `GEMINI_MODEL` (bawaan `gemini-flash-latest`) bisa diganti bila perlu.
 
 ## 7. Cek akhir
 
