@@ -68,7 +68,18 @@ Beri akses **Jurnal Guru** untuk guru (peran `guru`; juga `kepsek`, `bk`, `tu`, 
 lewat *Buat akun sekaligus* (peran awal guru di Jurnal sudah terisi). Jurnal adalah aplikasi kehadiran sekolah: BK
 membaca dan menulis kehadiran ke Jurnal lewat sambungan "Jurnal Guru → BK" di Pusat → Administrasi → Sambungan.
 
-## 5. Cek akhir
+## 5. Setelah BK dan TU terpasang
+
+Jurnal masih punya menu BK dan TU bawaan. Agar menu itu membuka aplikasi BK dan TU, isi di `.env` Jurnal:
+
+```ini
+BK_URL=https://bk.smkibupakusari.sch.id
+TU_URL=https://tu.smkibupakusari.sch.id
+```
+
+lalu `sudo -u www-data php artisan config:clear`.
+
+## 6. Cek akhir
 
 - Buka `https://jurnal.smkibupakusari.sch.id` → *Masuk lewat Pusat* → menu **Mengajar** muncul.
 - Admin → Integrasi Pusat menampilkan sinkron terakhir berhasil.
