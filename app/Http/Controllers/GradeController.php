@@ -33,9 +33,14 @@ class GradeController extends Controller
         }
         $editing = $request->query('act') ? $acts->firstWhere('id', $request->query('act')) : null;
         $susulan = $editing && ! Rules::gradeEditable($u, $editing); // hanya siswa tanpa nilai yang bisa diisi
+        // Dari Perangkat Ajar → "Buat kegiatan nilai": nama kegiatan terisi dan kriteria rubrik tampil sebagai panduan.
+        $pa = ! $editing && $request->integer('perangkat') ? \App\Models\PerangkatAjar::where(['id' => $request->integer('perangkat'), 'jenis' => 'guru',
+            'user_id' => $u->id, 'subject_id' => $subjectId, 'class_id' => $classId])->first() : null;
+        $dariPerangkat = $pa ? ['id' => $pa->id, 'nama' => mb_substr('Sumatif: '.$pa->topik, 0, 120),
+            'kriteria' => collect($pa->hasil['asesmen']['rubrik'] ?? [])->pluck('kriteria')->filter()->values()->all()] : null;
         $auth = $classId && $subjectId ? Rules::teacherAuthorization($u, $subjectId, $classId) : ['allowed' => false, 'error' => 'Pilih kelas dan mata pelajaran.'];
 
-        return view('grades.index', compact('classes', 'subjects', 'classMap', 'classId', 'subjectId', 'tab', 'students', 'acts', 'vals', 'editing', 'susulan', 'auth') + ['today' => Dates::today()]);
+        return view('grades.index', compact('classes', 'subjects', 'classMap', 'classId', 'subjectId', 'tab', 'students', 'acts', 'vals', 'editing', 'susulan', 'auth', 'dariPerangkat') + ['today' => Dates::today()]);
     }
 
     public function store(Request $request)

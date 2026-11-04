@@ -12,6 +12,7 @@ table.pa-tbl{width:100%;border-collapse:collapse;margin:0 0 10px}.pa-tbl th,.pa-
 .pa-kosong{height:48px}.pa-jawab{height:70px;border-top:1px dashed #888;margin-top:6px;padding-top:4px;color:#555}
 .pa-ttd{width:100%;margin-top:28px}.pa-ttd td{width:50%;text-align:center;vertical-align:top;border:0}.pa-sp{height:60px}
 ol{margin:0 0 0 18px;padding:0}
+.pa-cap{border:2px solid #1e6f43;color:#1e6f43;padding:2px 8px;font-size:9pt;font-weight:bold}.pa-disahkan{font-size:10pt;font-style:italic}
 </style></head>
 <body>@include('perangkat._dokumen')</body>
 </html>

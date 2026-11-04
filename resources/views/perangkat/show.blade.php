@@ -2,6 +2,7 @@
 @section('content')
 @php($D = \App\Services\Perangkat::DOKUMEN)
 @php($draf = $p->jenis === 'mgmp')
+@php($sah = ['' => ['belum diajukan', ''], 'diajukan' => ['menunggu pemeriksaan', 'b-warn'], 'disetujui' => ['disahkan kepala sekolah', 'b-ok'], 'revisi' => ['perlu perbaikan', 'b-bad']][$p->pengesahan] ?? ['', ''])
 <a class="back-link noprint" href="{{ route('perangkat') }}">‹ Perangkat ajar</a>
 <div class="head noprint">
     <div>
@@ -12,6 +13,7 @@
                 <span @class(['badge', 'b-ok' => $p->status === 'siap', 'b-warn' => $p->status !== 'siap'])>{{ $p->status === 'siap' ? 'siap dipakai guru' : 'masih draf' }}</span>
             @else
                 {{ $p->isian['mapel'] }} · {{ $p->kelas?->name ?? $p->isian['kelas'] }} · {{ $p->guru?->nama }}
+                <span class="badge {{ $sah[1] }}">{{ $sah[0] }}</span>
                 @if($asal) · dari draf MGMP @if($asal->updated_at > $p->created_at)<span class="badge b-warn" title="Draf MGMP diubah setelah Anda mengambilnya">draf MGMP diperbarui</span>@endif @endif
             @endif
         </small>
@@ -22,6 +24,7 @@
             <a class="btn" href="{{ route('perangkat.create', ['dari' => $p->id]) }}">Salin jadi draf baru</a>
         @elseif(! $draf)
             <a class="btn" href="{{ route('mengajar', ['subject' => $p->subject_id, 'class' => $p->class_id]) }}">Buka Mengajar</a>
+            @if($nilai)<a class="btn" href="{{ route('grades', ['subject' => $p->subject_id, 'class' => $p->class_id, 'perangkat' => $p->id]) }}">Buat kegiatan nilai</a>@endif
         @endif
     </div>
 </div>
@@ -45,6 +48,31 @@
     </div>
 @endif
 
+@if(! $draf && ($pemilik || $periksa || $p->pengesahan !== ''))
+    <div @class(['card', 'noprint', 'pa-sah-kartu', 'is-'.($p->pengesahan ?: 'draf')])>
+        <h2>Pemeriksaan kepala sekolah <span class="badge {{ $sah[1] }}">{{ $sah[0] }}</span></h2>
+        @if($p->pengesahan === 'disetujui')
+            <p class="mut">Disahkan {{ $p->pengesahan_oleh }}, {{ \App\Support\Dates::human(substr((string) $p->pengesahan_pada, 0, 10)) }}. Tanda pengesahan ikut tercetak. Mengubah isi akan membatalkan pengesahan.</p>
+        @elseif($p->pengesahan === 'diajukan')
+            <p class="mut">Sudah diajukan; menunggu kepala sekolah memeriksa.</p>
+        @elseif($p->pengesahan === 'revisi')
+            <p><b>Catatan perbaikan dari {{ $p->pengesahan_oleh }}:</b> {{ $p->pengesahan_catatan }}</p>
+        @else
+            <p class="mut">Bila semua dokumen sudah lengkap, ajukan ke kepala sekolah untuk diperiksa dan disahkan.</p>
+        @endif
+        @if($p->pengesahan_catatan && $p->pengesahan === 'disetujui')<p><b>Catatan:</b> {{ $p->pengesahan_catatan }}</p>@endif
+        @if($pemilik && in_array($p->pengesahan, ['', 'revisi'], true))
+            <form method="post" action="{{ route('perangkat.ajukan', $p) }}" class="inline">@csrf<button class="btn btn-pri">{{ $p->pengesahan === 'revisi' ? 'Ajukan ulang' : 'Ajukan ke kepala sekolah' }}</button></form>
+        @endif
+        @if($periksa && $p->pengesahan === 'diajukan')
+            <form method="post" action="{{ route('perangkat.periksa', $p) }}" style="margin-top:6px">@csrf
+                <div class="field"><label for="catatan">Catatan untuk guru <small class="mut">(wajib bila perlu perbaikan)</small></label><textarea id="catatan" name="catatan" rows="2" maxlength="1000">{{ old('catatan') }}</textarea></div>
+                <div class="row"><button class="btn btn-pri" name="keputusan" value="setujui">Setujui & sahkan</button><button class="btn" name="keputusan" value="revisi">Perlu perbaikan</button></div>
+            </form>
+        @endif
+    </div>
+@endif
+
 <nav class="subtab noprint" aria-label="Dokumen">
     @foreach($ada as $d)<a href="{{ route('perangkat.show', ['perangkat' => $p, 'dok' => $d]) }}" @class(['on' => $d === $dok]) @if($d === $dok) aria-current="page" @endif>{{ $D[$d] }}@if($p->dariAi($d)) <span class="badge b-ok">AI</span>@endif</a>@endforeach
 </nav>
@@ -60,10 +88,11 @@
             @endif
         @endif
     </div>
-    <small class="mut">{{ $p->dariAi($dok) ? 'Ditulis AI — periksa kebenaran isi dan sesuaikan dengan kelas sebelum dipakai.' : ($bisaUbah ? 'Draf templat: lengkapi bagian bertanda [ … ] lewat tombol Ubah isi.' : 'Draf templat.') }}</small>
+    <small class="mut">{{ $p->dariAi($dok) ? 'Ditulis AI — periksa kebenaran isi dan sesuaikan dengan kelas sebelum dipakai.' : ($bisaUbah ? ($p->mulai === 'kosong' ? 'Diisi manual: tulis isinya lewat tombol Ubah isi.' : 'Lengkapi bagian bertanda [ … ] lewat tombol Ubah isi.') : '') }}
+        @if($pakaiAi && $ai) AI terpakai {{ $pakaiAi[0] }}{{ $pakaiAi[1] ? ' dari '.$pakaiAi[1] : '' }} dokumen semester ini untuk mapel ini.@endif</small>
 </div>
 
-@if($draf && ($bisaUbah || ($p->isian['bahan'] ?? [])))
+@if($bisaUbah || ($p->isian['bahan'] ?? []))
     <div class="card noprint">
         <h2>Bahan ajar rujukan</h2>
         @forelse($p->isian['bahan'] ?? [] as $i => $b)
@@ -72,7 +101,7 @@
                 @if($bisaUbah)<form method="post" action="{{ route('perangkat.bahan.hapus', [$p, $i]) }}" class="inline" data-confirm="Hapus bahan “{{ $b['nama'] }}”?">@csrf @method('DELETE')<button class="btn btn-sm btn-danger">Hapus</button></form>@endif
             </div>
         @empty
-            <p class="mut">Belum ada. Bahan rujukan membuat tulisan AI sesuai buku/modul yang dipakai sekolah.</p>
+            <p class="mut">{{ $draf ? 'Belum ada. Bahan rujukan membuat tulisan AI sesuai buku/modul yang dipakai sekolah.' : 'Belum ada. Lampirkan buku, modul, atau ringkasan materi yang Anda pakai (PDF, DOCX, TXT).' }}</p>
         @endforelse
         @if($bisaUbah && count($p->isian['bahan'] ?? []) < \App\Services\BahanAjar::MAKS_BERKAS)
             <form method="post" action="{{ route('perangkat.bahan', $p) }}" enctype="multipart/form-data" class="row" style="margin-top:10px">@csrf

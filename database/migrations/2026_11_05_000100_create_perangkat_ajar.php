@@ -30,10 +30,17 @@ return new class extends Migration
             $t->text('isian');                      // JSON: data yang diisi guru di formulir
             $t->longText('hasil');                  // JSON: isi 5 dokumen (struktur Perangkat::kerangka)
             $t->string('sumber', 120)->default(''); // dokumen mana yang dibuat AI, mis. "modul,lkpd"
+            $t->string('mulai', 10)->default('templat'); // cara mulai: templat | kosong (isi manual) | ai | mgmp (diambil)
+            // Pemeriksaan kepala sekolah (perangkat guru): '' belum diajukan | diajukan | disetujui | revisi
+            $t->string('pengesahan', 10)->default('');
+            $t->text('pengesahan_catatan')->nullable();
+            $t->string('pengesahan_oleh', 120)->default('');
+            $t->string('pengesahan_pada', 32)->nullable();
             $t->string('created_at', 32)->nullable();
             $t->string('updated_at', 32)->nullable();
             $t->index(['jenis', 'subject_id', 'tahun', 'semester']);
             $t->index(['user_id', 'subject_id', 'class_id']);
+            $t->index(['jenis', 'pengesahan']);
         });
     }
 

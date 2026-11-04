@@ -91,7 +91,8 @@ class DemoSeeder extends Seeder
             $draf = \App\Models\PerangkatAjar::create(['jenis' => 'mgmp', 'status' => 'siap', 'user_id' => $ids['ibu.siti'], 'subject_id' => 1, 'tingkat' => 'XI',
                 'tahun' => '2026/2027', 'semester' => 'Ganjil', 'topik' => $in['topik'], 'isian' => $in + ['bahan' => []], 'hasil' => $hasil]);
             \App\Models\PerangkatAjar::create(['jenis' => 'guru', 'user_id' => $ids['ibu.siti'], 'subject_id' => 1, 'class_id' => 1, 'tingkat' => 'XI', 'tahun' => '2026/2027',
-                'semester' => 'Ganjil', 'topik' => $in['topik'], 'isian' => array_merge($in, ['guru' => 'Siti Aminah, S.Pd.', 'kelas' => 'XI DKV 1', 'bahan' => []]), 'hasil' => $hasil, 'dari_id' => $draf->id]);
+                'semester' => 'Ganjil', 'topik' => $in['topik'], 'isian' => array_merge($in, ['guru' => 'Siti Aminah, S.Pd.', 'kelas' => 'XI DKV 1', 'bahan' => []]), 'hasil' => $hasil, 'dari_id' => $draf->id,
+                'mulai' => 'mgmp', 'pengesahan' => 'diajukan']);
         }
         $this->command?->info("Data contoh dibuat: 4 kelas, $sid siswa, absensi 4 minggu terakhir.");
     }

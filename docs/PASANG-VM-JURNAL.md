@@ -81,19 +81,47 @@ lalu `sudo -u www-data php artisan config:clear`.
 
 ## 6. Perangkat Ajar & asisten AI (opsional)
 
-Alur: **tim MGMP** menyusun draf perangkat ajar (modul ajar, LKPD, asesmen & rubrik, bahan bacaan, tindak lanjut) per
-mapel + tingkat tiap semester, boleh dengan bahan ajar rujukan (PDF/DOCX/TXT), lalu menandainya *siap*. Guru yang
-mengampu mapel itu tinggal **mengambil** draf untuk kelasnya; salinan memakai nama, NIP, dan kelasnya sendiri.
+Menu **Perangkat Ajar** (modul ajar, LKPD, asesmen & rubrik, bahan bacaan, tindak lanjut). Ada dua cara guru
+mendapatkan perangkat untuk kelasnya:
 
-- Anggota MGMP: di Pusat → Akun, beri peran **mgmp** di aplikasi Jurnal Guru (selain `guru`). Draf hanya bisa disusun
-  untuk mapel yang diampunya.
-- AI hanya dipakai untuk menyusun draf MGMP (sekali per draf, bukan per guru). Kunci API Gemini gratis dari
-  [Google AI Studio](https://aistudio.google.com/apikey), pilih salah satu:
-  - **Kunci sekolah:** isi `GEMINI_API_KEY=...` di `.env` lalu `sudo -u www-data php artisan config:clear`; dipakai semua MGMP.
-  - **Kunci pribadi:** biarkan `GEMINI_API_KEY` kosong; tiap anggota MGMP mengisi kuncinya sendiri di
-    Perangkat Ajar → **Kunci AI** (tersimpan terenkripsi di server).
-- Tanpa kunci, draf tetap bisa dibuat dari templat. Yang dikirim ke Google hanya data pembelajaran dan bahan rujukan,
-  tanpa nama guru atau siswa. `GEMINI_MODEL` (bawaan `gemini-flash-latest`) bisa diganti bila perlu.
+1. **Ambil draf MGMP.** Tim MGMP menyusun draf per mapel + tingkat tiap semester, boleh dengan bahan ajar rujukan
+   (PDF/DOCX/TXT), lalu menandainya *siap*. Guru pengampu mapel itu tinggal mengambilnya; salinan memakai nama, NIP, dan
+   kelasnya sendiri.
+2. **Buat sendiri** (tombol *+ Buat sendiri*): mulai dari **templat** (kerangka langkah sesuai model pembelajaran) atau
+   **kosong** (semua isi ditulis manual). Perangkat buatan guru tidak memakai AI, supaya kuota hemat.
+
+Draf MGMP juga bisa dimulai dari templat, kosong, atau ditulis AI. Semua isi bisa diubah manual lewat *Ubah isi*.
+
+- **Anggota MGMP:** di Pusat → Akun, beri peran **mgmp** di aplikasi Jurnal Guru (selain `guru`). Draf hanya bisa
+  disusun untuk mapel yang diampunya.
+- **Pemeriksaan kepala sekolah:** guru menekan *Ajukan ke kepala sekolah*; kepala sekolah (atau admin) membuka
+  *Menunggu pemeriksaan* di Perangkat Ajar, lalu *Setujui & sahkan* atau *Perlu perbaikan* dengan catatan. Perangkat
+  yang disahkan memuat cap "DISAHKAN" saat dicetak/diunduh; bila isinya diubah lagi, pengesahan batal dan perlu
+  diajukan ulang.
+- **Rekap kelengkapan** (kepala sekolah/admin): Perangkat Ajar → *Rekap kelengkapan* menampilkan tiap guru × mapel ×
+  kelas semester ini: belum ada, belum diajukan, menunggu, perlu perbaikan, atau disahkan.
+- **Mengajar:** bila guru punya modul ajar untuk kelas·mapel itu, halaman Mengajar menyarankan pertemuan berikutnya dan
+  tombol *Isi materi & kegiatan* mengisi jurnal dari langkah modul.
+- **Nilai:** dari perangkat milik guru, *Buat kegiatan nilai* membuka menu Nilai dengan nama kegiatan "Sumatif: …" dan
+  kriteria rubrik sebagai panduan.
+
+### Kunci AI dan kuota
+
+AI hanya dipakai untuk menyusun draf MGMP (sekali per draf, bukan per guru). Kunci API Gemini gratis dari
+[Google AI Studio](https://aistudio.google.com/apikey). Urutan pemakaian kunci:
+
+1. **Kunci sekolah:** `GEMINI_API_KEY=...` di `.env`; dipakai semua MGMP.
+2. **Kunci bersama MGMP:** bila `.env` kosong, anggota MGMP mengisi satu kunci untuk mapelnya di
+   Perangkat Ajar → **Kunci AI** → *Kunci bersama MGMP*; dipakai semua anggota MGMP mapel itu.
+3. **Kunci pribadi:** cadangan terakhir; tiap anggota MGMP mengisi kuncinya sendiri di halaman yang sama.
+
+Kunci tersimpan terenkripsi di server dan tidak pernah dikirim ke browser. Untuk membatasi pemakaian kunci sekolah/MGMP,
+isi `AI_KUOTA_MGMP=40` (jumlah dokumen yang boleh diisi AI per mapel per semester; `0` = tanpa batas), lalu
+`sudo -u www-data php artisan config:clear`. Kunci pribadi tidak dihitung kuota. Pemakaian tampil di halaman Kunci AI.
+
+Tanpa kunci, perangkat tetap bisa dibuat dari templat atau diisi manual. Yang dikirim ke Google hanya data
+pembelajaran dan bahan rujukan, tanpa nama guru atau siswa. `GEMINI_MODEL` (bawaan `gemini-flash-latest`) bisa
+diganti bila perlu.
 
 ## 7. Cek akhir
 

@@ -59,6 +59,9 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/perangkat', [\App\Http\Controllers\PerangkatAjarController::class, 'store'])->middleware('throttle:20,1')->name('perangkat.store');
     Route::get('/perangkat/kunci', [\App\Http\Controllers\PerangkatAjarController::class, 'kunci'])->name('perangkat.kunci');
     Route::put('/perangkat/kunci', [\App\Http\Controllers\PerangkatAjarController::class, 'kunciSimpan'])->middleware('throttle:10,1')->name('perangkat.kunci.simpan');
+    Route::get('/perangkat/rekap', [\App\Http\Controllers\PerangkatAjarController::class, 'rekap'])->name('perangkat.rekap');
+    Route::post('/perangkat/{perangkat}/ajukan', [\App\Http\Controllers\PerangkatAjarController::class, 'ajukan'])->whereNumber('perangkat')->name('perangkat.ajukan');
+    Route::post('/perangkat/{perangkat}/periksa', [\App\Http\Controllers\PerangkatAjarController::class, 'periksa'])->whereNumber('perangkat')->name('perangkat.periksa');
     Route::get('/perangkat/{perangkat}', [\App\Http\Controllers\PerangkatAjarController::class, 'show'])->whereNumber('perangkat')->name('perangkat.show');
     Route::post('/perangkat/{perangkat}/status', [\App\Http\Controllers\PerangkatAjarController::class, 'status'])->whereNumber('perangkat')->name('perangkat.status');
     Route::post('/perangkat/{perangkat}/ambil', [\App\Http\Controllers\PerangkatAjarController::class, 'ambil'])->whereNumber('perangkat')->name('perangkat.ambil');

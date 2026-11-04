@@ -29,9 +29,12 @@
             <div class="alert alert-warn"><b>Mode nilai susulan:</b> kegiatan “{{ $editing->nama_kegiatan }}” diinput lebih dari 7 hari lalu. Nilai yang sudah ada terkunci; hanya siswa yang <b>belum punya nilai</b> yang bisa diisi.</div>
         @elseif($editing)
             <div class="alert alert-info">Mengedit kegiatan: {{ $editing->nama_kegiatan }} — menyimpan akan menimpa nilai lama.</div>
+        @elseif($dariPerangkat)
+            <div class="alert alert-info"><span class="alert-ic" aria-hidden="true">i</span><span class="alert-txt"><b>Kegiatan sumatif dari <a href="{{ route('perangkat.show', ['perangkat' => $dariPerangkat['id'], 'dok' => 'asesmen']) }}">perangkat ajar</a>.</b>
+                Isi nilai akhir tiap siswa lalu simpan.@if($dariPerangkat['kriteria']) Kriteria rubrik: {{ implode('; ', $dariPerangkat['kriteria']) }}.@endif</span></div>
         @endif
         <div class="fields">
-            <div><label for="nama">Nama Kegiatan</label><input id="nama" type="text" name="nama" value="{{ old('nama', $editing->nama_kegiatan ?? '') }}" placeholder="mis. Ulangan Harian 1" maxlength="120" required @readonly($susulan)></div>
+            <div><label for="nama">Nama Kegiatan</label><input id="nama" type="text" name="nama" value="{{ old('nama', $editing->nama_kegiatan ?? ($dariPerangkat['nama'] ?? '')) }}" placeholder="mis. Ulangan Harian 1" maxlength="120" required @readonly($susulan)></div>
             <div><label for="tanggal">Tanggal</label><input id="tanggal" type="date" name="tanggal" value="{{ old('tanggal', $editing->tanggal_kegiatan ?? $today) }}" max="{{ $today }}" required @readonly($susulan)></div>
             <div><label for="tipe_skala">Skala</label>@if($susulan)<input type="hidden" name="tipe" value="{{ $tipe }}">@endif<select id="tipe_skala" name="tipe" @disabled($susulan)><option value="angka" @selected($tipe === 'angka')>Angka (0–100)</option><option value="huruf" @selected($tipe === 'huruf')>Huruf (A–E)</option></select></div>
         </div>

@@ -55,12 +55,35 @@ class MengajarController extends Controller
             $data['students'] = Student::active()->where('class_id', $c['classId'])->orderBy('nama')->get();
             $data['existing'] = Attendance::query()->scope($c['classId'], $c['subjectId'])->where('tanggal', $c['tanggal'])->get()->keyBy('student_id');
             $data['perangkat'] = \App\Models\PerangkatAjar::where(['jenis' => 'guru', 'subject_id' => $c['subjectId'], 'class_id' => $c['classId'], 'user_id' => $u->id])
-                ->orderByDesc('updated_at')->limit(3)->get(['id', 'topik']);
+                ->orderByDesc('updated_at')->limit(3)->get();
+            $data['modul'] = $data['jurnal'] ? null : $this->saranModul($data['perangkat']->first(), $c);
             $data['riwayat'] = Jurnal::with('guru')->where(['class_id' => $c['classId'], 'subject_id' => $c['subjectId']])
                 ->orderByDesc('tanggal')->orderByDesc('jam_ke')->limit(12)->get();
         }
 
         return view('mengajar.index', $data);
+    }
+
+    /**
+     * Saran isi jurnal dari modul ajar terbaru: pertemuan ke-n = jumlah jurnal kelas·mapel ini sejak perangkat dibuat + 1
+     * (paling banyak jumlah pertemuan di modul). Guru tetap bisa memilih pertemuan lain.
+     */
+    private function saranModul(?\App\Models\PerangkatAjar $pa, array $c): ?array
+    {
+        $modul = $pa ? \App\Services\Perangkat::rapikan($pa->hasil['modul'] ?? [], \App\Services\Perangkat::kerangka('modul')) : null;
+        if (! $modul || ! $modul['pertemuan']) {
+            return null;
+        }
+        $sudah = Jurnal::where(['class_id' => $c['classId'], 'subject_id' => $c['subjectId']])
+            ->where('tanggal', '>=', substr((string) $pa->created_at, 0, 10))->where('tanggal', '<', $c['tanggal'])->count();
+        $tujuan = implode('; ', $modul['tujuan']);
+        $isi = array_map(fn ($pt) => [
+            'judul' => $pt['judul'],
+            'materi' => mb_substr($pa->topik.($tujuan !== '' ? ' — '.$tujuan : ''), 0, 2000),
+            'kegiatan' => mb_substr(implode('; ', array_merge($pt['memahami'], $pt['mengaplikasi'], $pt['merefleksi'])), 0, 2000),
+        ], $modul['pertemuan']);
+
+        return ['perangkat' => $pa, 'ke' => min($sudah, count($isi) - 1), 'isi' => $isi];
     }
 
     public function store(Request $request)

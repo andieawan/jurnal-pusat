@@ -28,7 +28,7 @@ class PerangkatAjarTest extends TestCase
     private function isian(array $tambah = []): array
     {
         return $tambah + [
-            'subject' => 1, 'tingkat' => 'X', 'topik' => 'Teks prosedur', 'tp' => "Menyusun teks prosedur\nMempresentasikan teks prosedur",
+            'subject' => 1, 'tingkat' => 'X', 'mulai' => 'templat', 'topik' => 'Teks prosedur', 'tp' => "Menyusun teks prosedur\nMempresentasikan teks prosedur",
             'alokasi' => '2 x 45 menit', 'pertemuan' => 2, 'model' => 'Problem Based Learning (PBL)',
             'metode' => ['Diskusi kelompok'], 'dimensi' => ['Penalaran kritis', 'Komunikasi'], 'dokumen' => ['modul', 'lkpd', 'asesmen', 'bacaan', 'tindak'],
         ];
@@ -48,8 +48,9 @@ class PerangkatAjarTest extends TestCase
 
     public function test_mgmp_menyusun_draf_lalu_guru_mapel_mengambil_untuk_kelasnya(): void
     {
-        $this->actingAs($this->guru2)->get('/perangkat/baru')->assertForbidden(); // bukan MGMP
-        $this->actingAs($this->wali)->get('/perangkat/baru')->assertOk()->assertSee('Draf MGMP Baru')->assertDontSee('name="pakai_ai"', false);
+        $this->actingAs($this->guru2)->get('/perangkat/baru')->assertOk()->assertSee('Perangkat Ajar Baru')->assertDontSee('Draf MGMP Baru'); // bukan MGMP: perangkat sendiri
+        $this->post('/perangkat', $this->isian())->assertForbidden(); // tidak bisa menyusun draf MGMP
+        $this->actingAs($this->wali)->get('/perangkat/baru')->assertOk()->assertSee('Draf MGMP Baru')->assertDontSee('value="ai"', false);
         $d = $this->draf();
         $this->assertNull($d->class_id);
         $this->assertSame(['X', 'draf', 'E', 'Tim MGMP Bahasa Indonesia'], [$d->tingkat, $d->status, $d->isian['fase'], $d->isian['guru']]);
@@ -122,8 +123,9 @@ class PerangkatAjarTest extends TestCase
         $this->get('/perangkat/kunci')->assertSee('…7890');
 
         $this->gemini();
-        $this->get('/perangkat/baru')->assertSee('name="pakai_ai"', false);
-        $d = $this->draf(['pakai_ai' => 1]);
+        $this->get('/perangkat/baru')->assertSee('value="ai"', false);
+        $d = $this->draf(['mulai' => 'ai']);
+        $this->assertSame('ai', $d->mulai);
         $this->get(route('perangkat.show', ['perangkat' => $d, 'isi_ai' => 1]))->assertSee('data-ai-antre', false);
         $this->postJson(route('perangkat.ai', [$d, 'modul']))->assertOk()->assertJson(['ok' => true]);
         $this->assertSame(['TP dari AI'], $d->fresh()->hasil['modul']['tujuan']);
@@ -141,6 +143,122 @@ class PerangkatAjarTest extends TestCase
 
         $this->put('/perangkat/kunci', ['hapus' => 1]);
         $this->assertNull($this->wali->fresh()->ai_key);
+    }
+
+    private function milikGuru2(array $tambah = []): PerangkatAjar
+    {
+        $this->actingAs($this->guru2)->post('/perangkat', $this->isian(['jenis' => 'guru', 'class' => 2] + $tambah))->assertRedirect();
+
+        return PerangkatAjar::where(['jenis' => 'guru', 'user_id' => $this->guru2->id])->latest('id')->firstOrFail();
+    }
+
+    public function test_guru_membuat_perangkat_sendiri_dari_templat_atau_kosong_tanpa_ai(): void
+    {
+        config(['absensi.ai.key' => 'kunci-sekolah']);
+        $this->actingAs($this->guru2)->get('/perangkat/baru?jenis=guru')->assertOk()->assertSee('X TKJ 1')->assertSee('value="kosong"', false)->assertDontSee('value="ai"', false);
+        $this->post('/perangkat', $this->isian(['jenis' => 'guru', 'class' => 1]))->assertSessionHas('error'); // bukan kelasnya
+        $this->post('/perangkat', $this->isian(['jenis' => 'guru', 'class' => 2, 'mulai' => 'ai']))->assertSessionHasErrors('mulai');
+
+        $t = $this->milikGuru2();
+        $this->assertSame(['guru', 2, 'X', 'Guru Dua', 'X TKJ 1', 'TKJ', 'templat'], [$t->jenis, $t->class_id, $t->tingkat, $t->isian['guru'], $t->isian['kelas'], $t->isian['konsentrasi'], $t->mulai]);
+        $this->assertStringContainsString('[', $t->hasil['modul']['pemahaman_bermakna']);
+
+        $k = $this->milikGuru2(['mulai' => 'kosong', 'topik' => 'Surat dinas']);
+        $this->assertSame('', $k->hasil['modul']['pemahaman_bermakna']);
+        $this->assertSame(['Menyusun teks prosedur', 'Mempresentasikan teks prosedur'], $k->hasil['modul']['tujuan']);
+        $this->assertCount(2, $k->hasil['modul']['pertemuan']);
+        $this->assertSame([], $k->hasil['modul']['pertemuan'][0]['memahami']);
+        $this->assertSame([], $k->hasil['asesmen']['rubrik']);
+        $this->get(route('perangkat.show', $k))->assertOk()->assertSee('Diisi manual')->assertDontSee('Isi dengan AI');
+        $this->get(route('perangkat.edit', [$k, 'modul']))->assertOk()->assertSee('Pertemuan 1 (2 x 45 menit)');
+        $this->put(route('perangkat.update', [$k, 'modul']), ['isi' => ['pertemuan' => [['judul' => 'P1', 'memahami' => 'Membaca contoh surat']]]])->assertRedirect();
+        $this->assertSame(['Membaca contoh surat'], $k->fresh()->hasil['modul']['pertemuan'][0]['memahami']);
+        $this->postJson(route('perangkat.ai', [$k, 'modul']))->assertForbidden(); // AI hanya untuk draf MGMP
+        $this->get('/perangkat')->assertSee('Surat dinas')->assertSee('+ Buat sendiri');
+    }
+
+    public function test_pemeriksaan_kepala_sekolah(): void
+    {
+        $p = $this->milikGuru2();
+        $this->get(route('perangkat.show', $p))->assertSee('Ajukan ke kepala sekolah')->assertSee('belum diajukan');
+        $this->post(route('perangkat.periksa', $p), ['keputusan' => 'setujui'])->assertForbidden(); // guru tidak memeriksa
+        $this->post(route('perangkat.ajukan', $p))->assertSessionHas('success');
+        $this->assertSame('diajukan', $p->fresh()->pengesahan);
+
+        $this->actingAs($this->wali)->post(route('perangkat.ajukan', $p))->assertForbidden(); // bukan pemiliknya
+        $this->actingAs($this->kepsek)->get('/perangkat')->assertSee('Menunggu pemeriksaan')->assertSee('Teks prosedur');
+        $this->get(route('perangkat.show', $p))->assertSee('Setujui & sahkan', false);
+        $this->post(route('perangkat.periksa', $p), ['keputusan' => 'revisi'])->assertSessionHasErrors('catatan');
+        $this->post(route('perangkat.periksa', $p), ['keputusan' => 'revisi', 'catatan' => 'Lengkapi rubrik'])->assertRedirect();
+        $this->assertSame(['revisi', 'Lengkapi rubrik', 'Kepsek'], [$p->fresh()->pengesahan, $p->fresh()->pengesahan_catatan, $p->fresh()->pengesahan_oleh]);
+
+        $this->actingAs($this->guru2)->get(route('perangkat.show', $p))->assertSee('Lengkapi rubrik')->assertSee('Ajukan ulang');
+        $this->post(route('perangkat.ajukan', $p));
+        $this->actingAs($this->kepsek)->post(route('perangkat.periksa', $p), ['keputusan' => 'setujui'])->assertSessionHas('success');
+        $this->assertSame('disetujui', $p->fresh()->pengesahan);
+        $this->get(route('perangkat.show', $p))->assertSee('DISAHKAN')->assertSee('telah diperiksa dan disahkan');
+        $this->assertStringContainsString('DISAHKAN', $this->get(route('perangkat.unduh', [$p, 'modul']))->getContent());
+
+        // Isi diubah setelah disahkan → kembali belum diajukan
+        $this->actingAs($this->guru2)->put(route('perangkat.update', [$p, 'tindak']), ['isi' => ['remedial' => [['sasaran' => 'a', 'kegiatan' => 'b']]]])
+            ->assertSessionHas('success', fn ($m) => str_contains($m, 'pengesahan kepala sekolah dibatalkan'));
+        $this->assertSame('', $p->fresh()->pengesahan);
+    }
+
+    public function test_rekap_kelengkapan_untuk_kepala_sekolah(): void
+    {
+        $p = $this->milikGuru2();
+        $this->actingAs($this->guru2)->get('/perangkat/rekap')->assertForbidden();
+        $r = $this->actingAs($this->kepsek)->get('/perangkat/rekap')->assertOk()->assertSee('Guru Dua')->assertSee('Wali')->assertSee('Teks prosedur');
+        $this->assertSame(3, $r->viewData('total')); // wali: B.Indo X RPL 1 · guru: Matematika X RPL 1 · guru2: B.Indo X TKJ 1
+        $this->assertSame(['belum' => 2, 'draf' => 1], $r->viewData('hitung')->sortKeys()->all());
+        $this->get('/perangkat/rekap?status=belum')->assertSee('Matematika')->assertDontSee('Guru Dua');
+        $this->get('/perangkat')->assertSee('Rekap kelengkapan');
+    }
+
+    public function test_mengajar_terisi_dari_modul_dan_asesmen_jadi_kegiatan_nilai(): void
+    {
+        $p = $this->milikGuru2();
+        $kemarin = $this->daysAgo(1);
+        $r = $this->actingAs($this->guru2)->get('/mengajar?subject=1&class=2')->assertOk()->assertSee('data-isi-modul', false)->assertSee('Pertemuan 2 (2 x 45 menit)');
+        $this->assertSame(0, $r->viewData('modul')['ke']);
+        \App\Models\Jurnal::create(['user_id' => $this->guru2->id, 'class_id' => 2, 'subject_id' => 1, 'tanggal' => $kemarin, 'jam_ke' => '', 'materi' => 'P1']);
+        $p->forceFill(['created_at' => $this->daysAgo(3).' 00:00:00'])->saveQuietly();
+        $m = $this->get('/mengajar?subject=1&class=2')->viewData('modul');
+        $this->assertSame(1, $m['ke']);
+        $this->assertStringStartsWith('Teks prosedur — Menyusun teks prosedur', $m['isi'][1]['materi']);
+        $this->assertNotSame('', $m['isi'][1]['kegiatan']);
+        $this->assertNull($this->get('/mengajar?subject=1&class=2&date='.$kemarin)->viewData('modul')); // jurnal sudah ada
+
+        $this->get(route('perangkat.show', $p))->assertSee('Buat kegiatan nilai');
+        $this->get('/nilai?subject=1&class=2&perangkat='.$p->id)->assertOk()->assertSee('value="Sumatif: Teks prosedur"', false)->assertSee('Kriteria rubrik');
+        $this->post('/nilai', ['class' => 2, 'subject' => 1, 'nama' => 'Sumatif: Teks prosedur', 'tanggal' => $this->daysAgo(0), 'tipe' => 'angka', 'nilai' => [5 => '88', 6 => '']])->assertRedirect();
+        $this->assertSame('Sumatif: Teks prosedur', \App\Models\GradeActivity::firstOrFail()->nama_kegiatan);
+        $this->actingAs($this->wali)->get('/nilai?subject=1&class=1&perangkat='.$p->id)->assertDontSee('Kriteria rubrik'); // bukan miliknya
+    }
+
+    public function test_kunci_bersama_mgmp_dan_kuota_per_mapel(): void
+    {
+        config(['absensi.ai.key' => '', 'absensi.ai.kuota' => 1]);
+        $this->gemini();
+        $d = $this->draf();
+        $this->assertFalse(\App\Services\PerangkatAi::tersedia($this->wali, 1));
+        $this->actingAs($this->wali)->put('/perangkat/kunci', ['mapel' => 2, 'ai_key' => 'AIzaKunciBersamaMgmp_1234567890'])->assertForbidden(); // bukan MGMP Matematika
+        $this->put('/perangkat/kunci', ['mapel' => 1, 'ai_key' => 'AIzaKunciBersamaMgmp_1234567890'])->assertSessionHas('success');
+        $this->assertStringNotContainsString('AIzaKunciBersama', (string) DB::table('ai_kunci_mgmp')->value('kunci'));
+        $this->get('/perangkat/kunci')->assertSee('diisi Wali')->assertSee('0 / 1');
+
+        $this->postJson(route('perangkat.ai', [$d, 'modul']))->assertOk();
+        Http::assertSent(fn (HttpRequest $r) => $r->hasHeader('x-goog-api-key', 'AIzaKunciBersamaMgmp_1234567890'));
+        $this->postJson(route('perangkat.ai', [$d, 'lkpd']))->assertStatus(422)->assertJsonFragment(['pesan' => 'Kuota AI mapel ini semester ini sudah habis (1 dari 1 dokumen). Lanjutkan dengan mengisi manual, atau pakai kunci pribadi.']);
+        $this->get(route('perangkat.show', $d))->assertSee('AI terpakai 1 dari 1');
+
+        // Kunci pribadi tidak dihitung kuota
+        $this->put('/perangkat/kunci', ['mapel' => 1, 'hapus' => 1]);
+        $this->assertSame(0, DB::table('ai_kunci_mgmp')->count());
+        $this->put('/perangkat/kunci', ['ai_key' => 'AIzaKunciPribadiGuru_1234567890']);
+        $this->postJson(route('perangkat.ai', [$d, 'lkpd']))->assertOk();
+        $this->assertSame(['mgmp', 'pribadi'], DB::table('ai_pemakaian')->orderBy('id')->pluck('kunci')->all());
     }
 
     public function test_bahan_ajar_diunggah_dan_dipakai_ai(): void

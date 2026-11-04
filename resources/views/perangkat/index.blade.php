@@ -3,10 +3,30 @@
 <div class="head">
     <div>
         <h1>Perangkat Ajar</h1>
-        <small>MGMP menyusun draf tiap semester; guru mengambilnya untuk kelas masing-masing, lalu menyesuaikan, mencetak berkop, dan mengunduh Word.</small>
+        <small>Ambil draf MGMP untuk kelas Anda, atau susun sendiri dari templat / isian kosong. Perangkat bisa diajukan ke kepala sekolah, dicetak berkop, dan diunduh Word.</small>
     </div>
-    @if($mgmp)<div class="row"><a class="btn" href="{{ route('perangkat.kunci') }}">Kunci AI</a><a class="btn btn-pri" href="{{ route('perangkat.create') }}">+ Draf MGMP baru</a></div>@endif
+    <div class="row">
+        @if($bisaPeriksa)<a class="btn" href="{{ route('perangkat.rekap') }}">Rekap kelengkapan</a>@endif
+        @if($mgmp)<a class="btn" href="{{ route('perangkat.kunci') }}">Kunci AI</a><a class="btn" href="{{ route('perangkat.create') }}">+ Draf MGMP</a>@endif
+        @if($bisaBuat)<a class="btn btn-pri" href="{{ route('perangkat.create', ['jenis' => 'guru']) }}">+ Buat sendiri</a>@endif
+    </div>
 </div>
+
+@if($bisaPeriksa)
+<div class="card card-tight" id="periksa">
+    <div class="list-tools"><b>Menunggu pemeriksaan</b><small class="mut">diajukan guru · {{ $periksa->count() }}</small></div>
+    @forelse($periksa as $p)
+        <div class="bk-item">
+            <div class="bk-top">
+                <div class="nm"><a href="{{ route('perangkat.show', $p) }}"><b>{{ $p->topik }}</b></a><small>{{ $p->guru?->nama }} · {{ $p->mapel?->name }} · {{ $p->kelas?->name }}</small></div>
+                <div class="row"><a class="btn btn-sm btn-pri" href="{{ route('perangkat.show', $p) }}">Periksa</a></div>
+            </div>
+        </div>
+    @empty
+        <div class="empty">Tidak ada perangkat ajar yang menunggu pemeriksaan.</div>
+    @endforelse
+</div>
+@endif
 
 <div class="card card-tight">
     <div class="list-tools"><b>Draf MGMP siap dipakai — {{ $set->semester }} {{ $set->tahun_ajaran }}</b><small class="mut">untuk mapel yang Anda ampu</small></div>
@@ -44,16 +64,17 @@
 <div class="card card-tight">
     <div class="list-tools"><b>{{ $semua ? 'Perangkat ajar guru' : 'Perangkat ajar saya' }}</b></div>
     @if($milik->isEmpty())
-        <div class="empty">Belum ada. Ambil draf MGMP di atas untuk kelas Anda.</div>
+        <div class="empty">Belum ada. Ambil draf MGMP di atas untuk kelas Anda {!! $bisaBuat ? 'atau <a href="'.e(route('perangkat.create', ['jenis' => 'guru'])).'">buat sendiri</a>' : '' !!}.</div>
     @else
         <table class="tbl tbl-cards">
-            <thead><tr><th>Topik</th><th>Mapel · Kelas</th>@if($semua)<th>Guru</th>@endif<th>Diperbarui</th><th></th></tr></thead>
+            <thead><tr><th>Topik</th><th>Mapel · Kelas</th>@if($semua)<th>Guru</th>@endif<th>Pengesahan</th><th>Diperbarui</th><th></th></tr></thead>
             <tbody>
             @foreach($milik as $p)
                 <tr>
                     <td class="card-title"><a href="{{ route('perangkat.show', $p) }}"><b>{{ $p->topik }}</b></a></td>
                     <td data-label="Mapel">{{ $p->mapel?->name }} · {{ $p->kelas?->name }}</td>
                     @if($semua)<td data-label="Guru">{{ $p->guru?->nama ?? '—' }}</td>@endif
+                    <td data-label="Pengesahan">@include('perangkat._sah', ['s' => $p->pengesahan])</td>
                     <td data-label="Diperbarui">{{ \App\Support\Dates::human(substr((string) $p->updated_at, 0, 10)) }}</td>
                     <td class="r"><a class="btn btn-sm" href="{{ route('perangkat.show', $p) }}">Buka</a></td>
                 </tr>

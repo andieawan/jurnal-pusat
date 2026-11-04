@@ -4,6 +4,7 @@
     $isi = \App\Services\Perangkat::rapikan($p->hasil[$dok] ?? [], \App\Services\Perangkat::kerangka($dok));
     $judul = ['modul' => 'MODUL AJAR', 'lkpd' => 'LEMBAR KERJA PESERTA DIDIK (LKPD)', 'asesmen' => 'INSTRUMEN ASESMEN & RUBRIK PENILAIAN',
               'bacaan' => 'BAHAN BACAAN GURU & PESERTA DIDIK', 'tindak' => 'PROGRAM TINDAK LANJUT PEMBELAJARAN'][$dok];
+    $disahkan = $p->jenis === 'guru' && $p->pengesahan === 'disetujui' ? \App\Support\Dates::human(substr((string) $p->pengesahan_pada, 0, 10)) : '';
     $daftar = fn (array $xs) => $xs ? '<ol>'.collect($xs)->map(fn ($x) => '<li>'.e($x).'</li>')->implode('').'</ol>' : '<p>-</p>';
 @endphp
 @include('letters._kop')
@@ -46,7 +47,7 @@
     <h2 class="pa-h">D. Asesmen</h2>
     <p>{{ $isi['asesmen'] ?: '-' }}</p>
     <table class="pa-ttd"><tr>
-        <td>Mengetahui,<br>Kepala Sekolah<div class="pa-sp"></div><b>{{ $in['kepsek'] }}</b>@if($in['kepsek_nip'])<br>NIP/NUPTK {{ $in['kepsek_nip'] }}@endif</td>
+        <td>Mengetahui,<br>Kepala Sekolah<div class="pa-sp">@if($disahkan)<span class="pa-cap">✓ DISAHKAN<br>{{ $disahkan }}</span>@endif</div><b>{{ $in['kepsek'] }}</b>@if($in['kepsek_nip'])<br>NIP/NUPTK {{ $in['kepsek_nip'] }}@endif</td>
         <td>{{ config('absensi.surat.kota') }}, {{ \App\Support\Dates::human(substr((string) $p->updated_at, 0, 10)) }}<br>Guru Mata Pelajaran<div class="pa-sp"></div><b>{{ $in['guru'] }}</b>@if($in['nip'])<br>NIP/NUPTK {{ $in['nip'] }}@endif</td>
     </tr></table>
 @elseif($dok === 'lkpd')
@@ -76,4 +77,7 @@
     <table class="pa-tbl"><tr><th style="width:40%">Sasaran</th><th>Kegiatan</th></tr>@foreach($isi['remedial'] as $r)<tr><td>{{ $r['sasaran'] }}</td><td>{{ $r['kegiatan'] }}</td></tr>@endforeach</table>
     <h2 class="pa-h">B. Pengayaan</h2>
     <table class="pa-tbl"><tr><th style="width:40%">Fokus</th><th>Kegiatan</th></tr>@foreach($isi['pengayaan'] as $r)<tr><td>{{ $r['fokus'] }}</td><td>{{ $r['kegiatan'] }}</td></tr>@endforeach</table>
+@endif
+@if($disahkan)
+    <p class="pa-disahkan">Perangkat ajar ini telah diperiksa dan disahkan oleh Kepala Sekolah ({{ $p->pengesahan_oleh }}) pada {{ $disahkan }}.</p>
 @endif

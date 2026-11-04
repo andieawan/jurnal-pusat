@@ -454,6 +454,26 @@
   });
 })();
 
+// Mengajar: isi materi & kegiatan dari pertemuan modul ajar yang dipilih (<select data-modul> + <button data-isi-modul>).
+(function () {
+  document.querySelectorAll('[data-isi-modul]').forEach(function (b) {
+    var s = b.parentNode.querySelector('select[data-modul]');
+    if (!s) return;
+    var isi = [];
+    try { isi = JSON.parse(s.getAttribute('data-modul')); } catch (e) {}
+    b.addEventListener('click', function () {
+      var m = isi[+s.value];
+      if (!m) return;
+      [['materi', m.materi], ['kegiatan', m.kegiatan]].forEach(function (x) {
+        var t = document.getElementById(x[0]);
+        if (t && x[1]) { t.value = x[1]; t.dispatchEvent(new Event('input', { bubbles: true })); }
+      });
+      var t = document.getElementById('materi');
+      if (t) t.focus();
+    });
+  });
+})();
+
 // Formulir tanpa kirim otomatis: ganti mapel → daftar kelas ikut diperbarui (<select data-class-map> tanpa data-auto).
 (function () {
   document.querySelectorAll('select[data-class-map]:not([data-auto])').forEach(function (s) {

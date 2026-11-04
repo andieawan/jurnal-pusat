@@ -115,6 +115,21 @@ final class Perangkat
         return $hasil;
     }
 
+    /** Dokumen kosong untuk diisi manual: hanya kerangka, tujuan, dan judul pertemuan yang terisi dari formulir. */
+    public static function kosong(array $in, string $dok): array
+    {
+        $isi = self::rapikan([], self::kerangka($dok));
+        if ($dok === 'modul') {
+            $isi['tujuan'] = array_values(array_filter(array_map('trim', preg_split('/\R/', (string) $in['tp']))));
+            $isi['pertemuan'] = array_map(fn ($ke) => ['judul' => 'Pertemuan '.$ke.' ('.$in['alokasi'].')'] + self::rapikan([], self::kerangka('modul')['pertemuan'][0]),
+                range(1, max(1, (int) $in['pertemuan'])));
+        } elseif ($dok === 'lkpd') {
+            $isi['judul'] = 'LKPD: '.$in['topik'];
+        }
+
+        return $isi;
+    }
+
     /** Draf tanpa AI: kerangka terisi dari isian guru, bagian yang perlu dilengkapi ditandai [...]. */
     public static function templat(array $in, string $dok): array
     {

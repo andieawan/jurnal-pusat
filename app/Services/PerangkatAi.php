@@ -2,20 +2,35 @@
 
 namespace App\Services;
 
+use App\Models\AiKunciMgmp;
+use App\Models\SchoolSetting;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
- * Mengisi satu dokumen perangkat ajar dengan Google Gemini (dipanggil dari server; kunci API hanya di .env, tidak
- * pernah dikirim ke browser). Yang dikirim ke Gemini hanya isian pembelajaran (mapel, topik, TP, dst.) — tanpa
+ * Mengisi satu dokumen perangkat ajar dengan Google Gemini (dipanggil dari server; kunci API tidak pernah dikirim ke
+ * browser). Yang dikirim ke Gemini hanya isian pembelajaran (mapel, topik, TP, dst.) — tanpa
  * nama guru, nama siswa, atau data pribadi lain. Jawaban diminta berupa JSON lalu disamakan dengan kerangka.
  */
 final class PerangkatAi
 {
-    /** Kunci yang dipakai: kunci sekolah di .env, atau kunci pribadi guru MGMP bila .env kosong. */
-    public static function kunci(?\App\Models\User $u): string
+    /**
+     * Kunci yang dipakai, berurutan: kunci sekolah (.env) → kunci bersama MGMP mapel itu → kunci pribadi penyusun.
+     * @return array{0: string, 1: string} [sumber (sekolah|mgmp|pribadi|''), kunci]
+     */
+    public static function kunci(?User $u, ?int $subjectId = null): array
     {
-        return (string) config('absensi.ai.key') ?: (string) ($u?->ai_key ?? '');
+        if ((string) config('absensi.ai.key') !== '') {
+            return ['sekolah', (string) config('absensi.ai.key')];
+        }
+        $mgmp = $subjectId ? (string) AiKunciMgmp::where('subject_id', $subjectId)->first()?->kunci : '';
+        if ($mgmp !== '') {
+            return ['mgmp', $mgmp];
+        }
+
+        return (string) ($u?->ai_key ?? '') !== '' ? ['pribadi', (string) $u->ai_key] : ['', ''];
     }
 
     public static function kunciSekolah(): bool
@@ -23,9 +38,26 @@ final class PerangkatAi
         return (string) config('absensi.ai.key') !== '';
     }
 
-    public static function tersedia(?\App\Models\User $u): bool
+    public static function tersedia(?User $u, ?int $subjectId = null): bool
     {
-        return self::kunci($u) !== '';
+        return self::kunci($u, $subjectId)[1] !== '';
+    }
+
+    /** Pemakaian AI satu mapel pada semester berjalan: [terpakai, kuota (0 = tanpa batas)]. */
+    public static function pemakaian(int $subjectId): array
+    {
+        $set = SchoolSetting::current();
+        $n = DB::table('ai_pemakaian')->where(['subject_id' => $subjectId, 'tahun' => (string) $set->tahun_ajaran, 'semester' => (string) $set->semester])
+            ->whereIn('kunci', ['sekolah', 'mgmp'])->count();
+
+        return [$n, max(0, (int) config('absensi.ai.kuota'))];
+    }
+
+    private static function catat(int $subjectId, ?User $u, string $dok, string $sumber): void
+    {
+        $set = SchoolSetting::current();
+        DB::table('ai_pemakaian')->insert(['subject_id' => $subjectId, 'user_id' => (int) $u?->id, 'tahun' => (string) $set->tahun_ajaran,
+            'semester' => (string) $set->semester, 'dok' => $dok, 'kunci' => $sumber, 'created_at' => now('UTC')->format('Y-m-d H:i:s')]);
     }
 
     private const PETUNJUK = [
@@ -37,10 +69,15 @@ final class PerangkatAi
     ];
 
     /** @return array isi dokumen, sudah disamakan dengan kerangka */
-    public static function isi(array $in, string $dok, ?\App\Models\User $u = null): array
+    public static function isi(array $in, string $dok, ?User $u = null, int $subjectId = 0): array
     {
-        if (! self::tersedia($u)) {
-            throw new RuntimeException('Belum ada kunci API Gemini. Isi kunci Anda di Perangkat Ajar → Kunci AI, atau minta admin mengisi GEMINI_API_KEY.');
+        [$sumber, $kunci] = self::kunci($u, $subjectId ?: null);
+        if ($kunci === '') {
+            throw new RuntimeException('Belum ada kunci API Gemini. Isi kunci di Perangkat Ajar → Kunci AI (pribadi atau bersama MGMP), atau minta admin mengisi GEMINI_API_KEY.');
+        }
+        [$terpakai, $kuota] = $subjectId ? self::pemakaian($subjectId) : [0, 0];
+        if ($sumber !== 'pribadi' && $kuota > 0 && $terpakai >= $kuota) {
+            throw new RuntimeException("Kuota AI mapel ini semester ini sudah habis ($terpakai dari $kuota dokumen). Lanjutkan dengan mengisi manual, atau pakai kunci pribadi.");
         }
         $bahan = BahanAjar::bagianAi((array) ($in['bahan'] ?? []));
         $kerangka = Perangkat::kerangka($dok);
@@ -73,7 +110,7 @@ final class PerangkatAi
         ]);
 
         $model = (string) config('absensi.ai.model', 'gemini-flash-latest');
-        $res = Http::withHeaders(['x-goog-api-key' => self::kunci($u)])
+        $res = Http::withHeaders(['x-goog-api-key' => $kunci])
             ->timeout((int) config('absensi.ai.timeout', 50))
             ->post('https://generativelanguage.googleapis.com/v1beta/models/'.rawurlencode($model).':generateContent', [
                 'contents' => [['role' => 'user', 'parts' => array_merge($bahan, [['text' => $prompt]])]],
@@ -94,6 +131,8 @@ final class PerangkatAi
         if (! is_array($data)) {
             throw new RuntimeException('Jawaban AI tidak bisa dibaca. Coba buat ulang.');
         }
+
+        $subjectId && self::catat($subjectId, $u, $dok, $sumber);
 
         return Perangkat::rapikan($data, $kerangka);
     }

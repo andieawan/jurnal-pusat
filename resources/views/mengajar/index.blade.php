@@ -37,7 +37,7 @@
 @if($classId && $subjectId && $auth['allowed'])
     <p class="hint pa-tautan">Perangkat ajar:
         @foreach($perangkat ?? [] as $pa)<a class="badge" href="{{ route('perangkat.show', $pa) }}">{{ \Illuminate\Support\Str::limit($pa->topik, 40) }}</a> @endforeach
-        @if(($perangkat ?? collect())->isEmpty())<a href="{{ route('perangkat') }}">ambil dari draf MGMP</a>@endif</p>
+        @if(($perangkat ?? collect())->isEmpty())<a href="{{ route('perangkat') }}">ambil dari draf MGMP</a> atau <a href="{{ route('perangkat.create', ['jenis' => 'guru', 'subject' => $subjectId, 'class' => $classId]) }}">buat sendiri</a>@endif</p>
 @endif
 @unless($auth['allowed'])<div class="alert alert-warn"><span class="alert-ic" aria-hidden="true">!</span><span class="alert-txt">{{ $auth['error'] ?? 'Anda tidak berwenang pada kelas/mapel ini.' }}</span></div>@endunless
 
@@ -57,6 +57,15 @@
             </span></div>
         @else
             <p class="mut" style="font-size:13px">Belum ada jurnal sebelumnya untuk kelas & mapel ini.</p>
+        @endif
+        @if($modul ?? null)
+            <div class="alert alert-info isi-modul"><span class="alert-ic" aria-hidden="true">i</span><span class="alert-txt">
+                <b>Dari modul ajar “{{ \Illuminate\Support\Str::limit($modul['perangkat']->topik, 60) }}”:</b>
+                <span class="row" style="margin-top:6px">
+                    <select aria-label="Pertemuan di modul" data-modul='@json($modul['isi'])' style="width:auto;min-width:0">@foreach($modul['isi'] as $i => $m)<option value="{{ $i }}" @selected($i === $modul['ke'])>{{ $m['judul'] ?: 'Pertemuan '.($i + 1) }}</option>@endforeach</select>
+                    <button type="button" class="btn btn-sm" data-isi-modul>↓ Isi materi & kegiatan</button>
+                </span>
+            </span></div>
         @endif
         @if($jurnal)<p class="hint">Jurnal pertemuan ini sudah diisi{{ $jurnal->guru ? ' oleh '.$jurnal->guru->nama : '' }} — ubah bila perlu lalu simpan lagi.</p>@endif
         <div class="field"><label for="materi">Materi / tujuan pembelajaran <span class="req">*</span></label>
