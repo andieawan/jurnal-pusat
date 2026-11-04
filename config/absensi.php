@@ -34,5 +34,11 @@ return [
         'nomor_awal' => env('SURAT_NOMOR_AWAL', '400.3.8.1'),   // nomor panggilan: {awal}/{urut}/{akhir}/{tahun}
         'nomor_akhir' => env('SURAT_NOMOR_AKHIR', '101.6.20570966'),
     ],
+    // Asisten AI untuk menu Perangkat Ajar (Google Gemini). Kosong = guru tetap bisa membuat draf dari templat.
+    'ai' => [
+        'key' => env('GEMINI_API_KEY', ''),
+        'model' => env('GEMINI_MODEL', 'gemini-flash-latest'),
+        'timeout' => (int) env('GEMINI_TIMEOUT', 50),
+    ],
     'bk_subject_id' => 5,        // mapel "Bimbingan Konseling" disembunyikan dari daftar mapel reguler
 ];

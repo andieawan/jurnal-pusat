@@ -453,3 +453,44 @@
     });
   });
 })();
+
+// Formulir tanpa kirim otomatis: ganti mapel → daftar kelas ikut diperbarui (<select data-class-map> tanpa data-auto).
+(function () {
+  document.querySelectorAll('select[data-class-map]:not([data-auto])').forEach(function (s) {
+    s.addEventListener('change', function () {
+      var cls = s.form && s.form.querySelector('select[name=class]'), m = {};
+      try { m = JSON.parse(s.dataset.classMap); } catch (e) {}
+      if (!cls) return;
+      var cur = cls.value;
+      cls.innerHTML = '';
+      (m[s.value] || []).forEach(function (x) { var o = document.createElement('option'); o.value = x[0]; o.textContent = x[1]; if (String(x[0]) === cur) o.selected = true; cls.appendChild(o); });
+    });
+  });
+})();
+
+// Perangkat Ajar: isi dokumen dengan AI satu per satu sambil menampilkan kemajuan (<div data-ai-antre="url1 url2 …">).
+(function () {
+  var box = document.querySelector('[data-ai-antre]');
+  if (!box) return;
+  var antre = box.getAttribute('data-ai-antre').split(' ').filter(Boolean);
+  var token = (document.querySelector('meta[name=csrf-token]') || {}).content;
+  var gagal = [];
+  function tandai(i, cls, teks) {
+    var li = box.querySelectorAll('li')[i];
+    if (li) { li.className = cls; li.querySelector('span').textContent = teks; }
+  }
+  function lanjut(i) {
+    if (i >= antre.length) {
+      var url = location.pathname + location.search.replace(/([?&])isi_ai=1&?/, '$1').replace(/[?&]$/, '');
+      if (gagal.length) { box.querySelector('p').textContent = 'Selesai dengan ' + gagal.length + ' dokumen gagal: ' + gagal.join('; ') + ' Dokumen itu tetap berisi draf templat.'; box.insertAdjacentHTML('beforeend', '<a class="btn btn-sm" href="' + url + '">Tampilkan hasil</a>'); }
+      else location.replace(url);
+      return;
+    }
+    tandai(i, 'jalan', 'sedang ditulis…');
+    fetch(antre[i], { method: 'POST', headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, pesan: 'HTTP ' + r.status }; }); })
+      .then(function (j) { if (j.ok) tandai(i, 'ok', 'selesai'); else { tandai(i, 'gagal', j.pesan || 'gagal'); gagal.push(j.pesan || 'gagal'); } lanjut(i + 1); })
+      .catch(function () { tandai(i, 'gagal', 'koneksi terputus'); gagal.push('koneksi terputus'); lanjut(i + 1); });
+  }
+  lanjut(0);
+})();

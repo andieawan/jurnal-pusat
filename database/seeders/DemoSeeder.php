@@ -79,6 +79,15 @@ class DemoSeeder extends Seeder
             }
         }
         self::extras($ids);
+        if (\Illuminate\Support\Facades\Schema::hasTable('perangkat_ajar')) {
+            $in = ['mapel' => 'Bahasa Indonesia', 'kelas' => 'XI DKV 1', 'fase' => 'F', 'konsentrasi' => 'Desain Komunikasi Visual', 'guru' => 'Siti Aminah, S.Pd.', 'nip' => '',
+                'sekolah' => 'SMK Islam Bustanul Ulum Pakusari', 'kepsek' => 'Dra. Ratna Kusuma, M.Pd.', 'kepsek_nip' => '', 'tahun' => '2026/2027', 'semester' => 'Ganjil',
+                'topik' => 'Teks prosedur kompleks', 'tp' => "Menganalisis struktur teks prosedur\nMenyusun teks prosedur pembuatan poster", 'elemen' => 'Menulis',
+                'alokasi' => '2 x 45 menit', 'pertemuan' => 2, 'model' => 'Problem Based Learning (PBL)', 'metode' => ['Diskusi kelompok', 'Presentasi'],
+                'dimensi' => ['Penalaran kritis', 'Komunikasi'], 'lingkungan' => ['Ruang kelas'], 'media' => ['Slide presentasi'], 'kesiapan' => '', 'sarana' => '', 'catatan' => ''];
+            \App\Models\PerangkatAjar::create(['user_id' => $ids['ibu.siti'], 'subject_id' => 1, 'class_id' => 1, 'topik' => $in['topik'], 'isian' => $in,
+                'hasil' => collect(array_keys(\App\Services\Perangkat::DOKUMEN))->mapWithKeys(fn ($d) => [$d => \App\Services\Perangkat::templat($in, $d)])->all()]);
+        }
         $this->command?->info("Data contoh dibuat: 4 kelas, $sid siswa, absensi 4 minggu terakhir.");
     }
 

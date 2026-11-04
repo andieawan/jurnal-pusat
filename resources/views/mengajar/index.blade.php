@@ -34,6 +34,11 @@
     @endif
 </form>
 
+@if($classId && $subjectId && $auth['allowed'])
+    <p class="hint pa-tautan">Perangkat ajar:
+        @foreach($perangkat ?? [] as $pa)<a class="badge" href="{{ route('perangkat.show', $pa) }}">{{ \Illuminate\Support\Str::limit($pa->topik, 40) }}</a> @endforeach
+        <a href="{{ route('perangkat.create', ['subject' => $subjectId, 'class' => $classId]) }}">+ buat untuk kelas ini</a></p>
+@endif
 @unless($auth['allowed'])<div class="alert alert-warn"><span class="alert-ic" aria-hidden="true">!</span><span class="alert-txt">{{ $auth['error'] ?? 'Anda tidak berwenang pada kelas/mapel ini.' }}</span></div>@endunless
 
 @if($classId && $subjectId)

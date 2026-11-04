@@ -79,7 +79,21 @@ TU_URL=https://tu.smkibupakusari.sch.id
 
 lalu `sudo -u www-data php artisan config:clear`.
 
-## 6. Cek akhir
+## 6. Asisten AI untuk Perangkat Ajar (opsional)
+
+Menu **Perangkat Ajar** menyusun modul ajar, LKPD, asesmen & rubrik, bahan bacaan, dan tindak lanjut. Tanpa AI, guru
+mendapat draf dari templat sesuai model pembelajaran. Agar AI ikut menulis isinya, buat kunci gratis di
+[Google AI Studio](https://aistudio.google.com/apikey) lalu isi di `.env` Jurnal:
+
+```ini
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-flash-latest
+```
+
+lalu `sudo -u www-data php artisan config:clear`. Kunci hanya ada di server; guru tidak perlu kunci sendiri. Yang dikirim
+ke Google hanya data pembelajaran (mapel, topik, tujuan, model, dst.), tanpa nama guru atau siswa.
+
+## 7. Cek akhir
 
 - Buka `https://jurnal.smkibupakusari.sch.id` → *Masuk lewat Pusat* → menu **Mengajar** muncul.
 - Admin → Integrasi Pusat menampilkan sinkron terakhir berhasil.

@@ -54,6 +54,8 @@ class MengajarController extends Controller
                 ->where('jam_ke', '!=', $c['jam'])->orderBy('jam_ke')->get();
             $data['students'] = Student::active()->where('class_id', $c['classId'])->orderBy('nama')->get();
             $data['existing'] = Attendance::query()->scope($c['classId'], $c['subjectId'])->where('tanggal', $c['tanggal'])->get()->keyBy('student_id');
+            $data['perangkat'] = \App\Models\PerangkatAjar::where(['subject_id' => $c['subjectId'], 'class_id' => $c['classId'], 'user_id' => $u->id])
+                ->orderByDesc('updated_at')->limit(3)->get(['id', 'topik']);
             $data['riwayat'] = Jurnal::with('guru')->where(['class_id' => $c['classId'], 'subject_id' => $c['subjectId']])
                 ->orderByDesc('tanggal')->orderByDesc('jam_ke')->limit(12)->get();
         }
