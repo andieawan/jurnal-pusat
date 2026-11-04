@@ -68,7 +68,13 @@ class SemuaHalamanTest extends TestCase
 
     private function lokal(string $h): ?string
     {
-        $h = preg_replace('#^https?://localhost#', '', trim($h));
+        $h = trim($h);
+        foreach ([rtrim(url('/'), '/'), rtrim((string) config('app.url'), '/'), 'http://localhost', 'https://localhost'] as $akar) {
+            if ($akar !== '' && str_starts_with($h, $akar)) {
+                $h = substr($h, strlen($akar)) ?: '/';
+                break;
+            }
+        }
         if ($h === '' || $h[0] !== '/' || str_starts_with($h, '//')) {
             return null;
         }
