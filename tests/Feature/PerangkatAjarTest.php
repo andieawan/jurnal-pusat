@@ -114,7 +114,9 @@ class PerangkatAjarTest extends TestCase
     public function test_kunci_pribadi_mgmp_dipakai_bila_env_kosong_dan_tersimpan_terenkripsi(): void
     {
         config(['absensi.ai.key' => '']);
-        $this->actingAs($this->guru2)->get('/perangkat/kunci')->assertForbidden();
+        $this->actingAs($this->bk)->get('/perangkat/kunci')->assertForbidden();
+        $this->actingAs($this->guru2)->get('/perangkat/kunci')->assertOk()->assertSee('Kunci pribadi Anda')->assertDontSee('Simpan kunci MGMP');
+        $this->put('/perangkat/kunci', ['mapel' => 1, 'ai_key' => 'AIzaKunciBersamaMgmp_1234567890'])->assertForbidden(); // bukan MGMP
         $this->actingAs($this->wali)->get('/perangkat/kunci')->assertOk()->assertSee('belum ada');
         $this->put('/perangkat/kunci', ['ai_key' => 'salah kunci'])->assertSessionHasErrors('ai_key');
         $this->put('/perangkat/kunci', ['ai_key' => 'AIzaKunciPribadiGuru_1234567890'])->assertSessionHas('success');
@@ -133,7 +135,7 @@ class PerangkatAjarTest extends TestCase
         Http::assertSent(fn (HttpRequest $r) => $r->hasHeader('x-goog-api-key', 'AIzaKunciPribadiGuru_1234567890') && ! str_contains($r->url(), 'key=')
             && str_contains(json_encode($r->data()), 'Teks prosedur') && ! str_contains(json_encode($r->data()), 'Wali'));
 
-        // Guru biasa tidak memakai AI: draf hanya MGMP; salinan guru tanpa tombol AI
+        // Guru biasa tidak boleh mengubah draf MGMP (AI pun tidak)
         $this->actingAs($this->guru2)->postJson(route('perangkat.ai', [$d, 'lkpd']))->assertForbidden();
 
         // Kunci sekolah di .env diutamakan
@@ -152,12 +154,11 @@ class PerangkatAjarTest extends TestCase
         return PerangkatAjar::where(['jenis' => 'guru', 'user_id' => $this->guru2->id])->latest('id')->firstOrFail();
     }
 
-    public function test_guru_membuat_perangkat_sendiri_dari_templat_atau_kosong_tanpa_ai(): void
+    public function test_guru_membuat_perangkat_sendiri_dari_templat_atau_kosong(): void
     {
-        config(['absensi.ai.key' => 'kunci-sekolah']);
+        config(['absensi.ai.key' => '']);
         $this->actingAs($this->guru2)->get('/perangkat/baru?jenis=guru')->assertOk()->assertSee('X TKJ 1')->assertSee('value="kosong"', false)->assertDontSee('value="ai"', false);
         $this->post('/perangkat', $this->isian(['jenis' => 'guru', 'class' => 1]))->assertSessionHas('error'); // bukan kelasnya
-        $this->post('/perangkat', $this->isian(['jenis' => 'guru', 'class' => 2, 'mulai' => 'ai']))->assertSessionHasErrors('mulai');
 
         $t = $this->milikGuru2();
         $this->assertSame(['guru', 2, 'X', 'Guru Dua', 'X TKJ 1', 'TKJ', 'templat'], [$t->jenis, $t->class_id, $t->tingkat, $t->isian['guru'], $t->isian['kelas'], $t->isian['konsentrasi'], $t->mulai]);
@@ -173,8 +174,31 @@ class PerangkatAjarTest extends TestCase
         $this->get(route('perangkat.edit', [$k, 'modul']))->assertOk()->assertSee('Pertemuan 1 (2 x 45 menit)');
         $this->put(route('perangkat.update', [$k, 'modul']), ['isi' => ['pertemuan' => [['judul' => 'P1', 'memahami' => 'Membaca contoh surat']]]])->assertRedirect();
         $this->assertSame(['Membaca contoh surat'], $k->fresh()->hasil['modul']['pertemuan'][0]['memahami']);
-        $this->postJson(route('perangkat.ai', [$k, 'modul']))->assertForbidden(); // AI hanya untuk draf MGMP
+        $this->postJson(route('perangkat.ai', [$k, 'modul']))->assertStatus(422); // belum ada kunci
         $this->get('/perangkat')->assertSee('Surat dinas')->assertSee('+ Buat sendiri');
+    }
+
+    public function test_guru_memakai_ai_untuk_perangkatnya_dengan_kuota_per_guru(): void
+    {
+        config(['absensi.ai.key' => 'kunci-sekolah', 'absensi.ai.kuota_guru' => 1]);
+        $this->gemini();
+        $this->actingAs($this->guru2)->get('/perangkat/baru?jenis=guru')->assertSee('value="ai"', false);
+        $p = $this->milikGuru2(['mulai' => 'ai']);
+        $this->assertSame('ai', $p->mulai);
+        $this->get(route('perangkat.show', ['perangkat' => $p, 'isi_ai' => 1]))->assertSee('data-ai-antre', false)->assertSee('Isi dengan AI');
+        $this->postJson(route('perangkat.ai', [$p, 'modul']))->assertOk();
+        $this->assertSame(['TP dari AI'], $p->fresh()->hasil['modul']['tujuan']);
+        Http::assertSent(fn (HttpRequest $r) => str_contains(json_encode($r->data()), 'X TKJ 1') && ! str_contains(json_encode($r->data()), 'Guru Dua'));
+        $this->postJson(route('perangkat.ai', [$p, 'lkpd']))->assertStatus(422)->assertJsonFragment(['pesan' => 'Kuota AI Anda semester ini sudah habis (1 dari 1 dokumen). Lanjutkan dengan mengisi manual, ambil draf MGMP, atau pakai kunci pribadi.']);
+        $this->get('/perangkat/kunci')->assertSee('Perangkat buatan Anda sendiri: 1 dari 1');
+
+        // Kuota guru tidak mengurangi MGMP; kunci MGMP mapelnya ikut dipakai guru pengampu
+        $this->actingAs($this->wali)->postJson(route('perangkat.ai', [$this->draf(), 'modul']))->assertOk();
+        config(['absensi.ai.key' => '', 'absensi.ai.kuota_guru' => 0]);
+        $this->put('/perangkat/kunci', ['mapel' => 1, 'ai_key' => 'AIzaKunciBersamaMgmp_1234567890']);
+        $this->actingAs($this->guru2)->postJson(route('perangkat.ai', [$p, 'lkpd']))->assertOk();
+        Http::assertSent(fn (HttpRequest $r) => $r->hasHeader('x-goog-api-key', 'AIzaKunciBersamaMgmp_1234567890'));
+        $this->assertSame(['guru', 'mgmp', 'guru'], DB::table('ai_pemakaian')->orderBy('id')->pluck('jenis')->all());
     }
 
     public function test_pemeriksaan_kepala_sekolah(): void

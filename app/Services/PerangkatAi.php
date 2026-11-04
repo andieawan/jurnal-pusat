@@ -18,6 +18,7 @@ final class PerangkatAi
 {
     /**
      * Kunci yang dipakai, berurutan: kunci sekolah (.env) → kunci bersama MGMP mapel itu → kunci pribadi penyusun.
+     * Berlaku untuk draf MGMP maupun perangkat milik guru (guru pengampu mapel ikut memakai kunci MGMP mapelnya).
      * @return array{0: string, 1: string} [sumber (sekolah|mgmp|pribadi|''), kunci]
      */
     public static function kunci(?User $u, ?int $subjectId = null): array
@@ -53,11 +54,21 @@ final class PerangkatAi
         return [$n, max(0, (int) config('absensi.ai.kuota'))];
     }
 
-    private static function catat(int $subjectId, ?User $u, string $dok, string $sumber): void
+    /** Pemakaian AI satu akun untuk perangkat milik guru pada semester berjalan: [terpakai, kuota (0 = tanpa batas)]. */
+    public static function pemakaianGuru(int $userId): array
+    {
+        $set = SchoolSetting::current();
+        $n = DB::table('ai_pemakaian')->where(['user_id' => $userId, 'jenis' => 'guru', 'tahun' => (string) $set->tahun_ajaran, 'semester' => (string) $set->semester])
+            ->whereIn('kunci', ['sekolah', 'mgmp'])->count();
+
+        return [$n, max(0, (int) config('absensi.ai.kuota_guru'))];
+    }
+
+    private static function catat(int $subjectId, ?User $u, string $dok, string $sumber, string $jenis): void
     {
         $set = SchoolSetting::current();
         DB::table('ai_pemakaian')->insert(['subject_id' => $subjectId, 'user_id' => (int) $u?->id, 'tahun' => (string) $set->tahun_ajaran,
-            'semester' => (string) $set->semester, 'dok' => $dok, 'kunci' => $sumber, 'created_at' => now('UTC')->format('Y-m-d H:i:s')]);
+            'semester' => (string) $set->semester, 'dok' => $dok, 'kunci' => $sumber, 'jenis' => $jenis, 'created_at' => now('UTC')->format('Y-m-d H:i:s')]);
     }
 
     private const PETUNJUK = [
@@ -69,7 +80,7 @@ final class PerangkatAi
     ];
 
     /** @return array isi dokumen, sudah disamakan dengan kerangka */
-    public static function isi(array $in, string $dok, ?User $u = null, int $subjectId = 0): array
+    public static function isi(array $in, string $dok, ?User $u = null, int $subjectId = 0, string $jenis = 'mgmp'): array
     {
         [$sumber, $kunci] = self::kunci($u, $subjectId ?: null);
         if ($kunci === '') {
@@ -78,6 +89,10 @@ final class PerangkatAi
         [$terpakai, $kuota] = $subjectId ? self::pemakaian($subjectId) : [0, 0];
         if ($sumber !== 'pribadi' && $kuota > 0 && $terpakai >= $kuota) {
             throw new RuntimeException("Kuota AI mapel ini semester ini sudah habis ($terpakai dari $kuota dokumen). Lanjutkan dengan mengisi manual, atau pakai kunci pribadi.");
+        }
+        [$milik, $batas] = $jenis === 'guru' && $u ? self::pemakaianGuru($u->id) : [0, 0];
+        if ($sumber !== 'pribadi' && $batas > 0 && $milik >= $batas) {
+            throw new RuntimeException("Kuota AI Anda semester ini sudah habis ($milik dari $batas dokumen). Lanjutkan dengan mengisi manual, ambil draf MGMP, atau pakai kunci pribadi.");
         }
         $bahan = BahanAjar::bagianAi((array) ($in['bahan'] ?? []));
         $kerangka = Perangkat::kerangka($dok);
@@ -132,7 +147,7 @@ final class PerangkatAi
             throw new RuntimeException('Jawaban AI tidak bisa dibaca. Coba buat ulang.');
         }
 
-        $subjectId && self::catat($subjectId, $u, $dok, $sumber);
+        $subjectId && self::catat($subjectId, $u, $dok, $sumber, $jenis);
 
         return Perangkat::rapikan($data, $kerangka);
     }

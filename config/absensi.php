@@ -41,6 +41,8 @@ return [
         'timeout' => (int) env('GEMINI_TIMEOUT', 50),
         // Batas dokumen yang diisi AI per mapel (MGMP) per semester untuk kunci sekolah / kunci MGMP. 0 = tanpa batas.
         'kuota' => (int) env('AI_KUOTA_MGMP', 0),
+        // Batas dokumen AI per akun guru per semester untuk perangkat miliknya sendiri. 0 = tanpa batas.
+        'kuota_guru' => (int) env('AI_KUOTA_GURU', 0),
     ],
     'bk_subject_id' => 5,        // mapel "Bimbingan Konseling" disembunyikan dari daftar mapel reguler
 ];

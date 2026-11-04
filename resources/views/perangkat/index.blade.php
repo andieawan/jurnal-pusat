@@ -7,7 +7,8 @@
     </div>
     <div class="row">
         @if($bisaPeriksa)<a class="btn" href="{{ route('perangkat.rekap') }}">Rekap kelengkapan</a>@endif
-        @if($mgmp)<a class="btn" href="{{ route('perangkat.kunci') }}">Kunci AI</a><a class="btn" href="{{ route('perangkat.create') }}">+ Draf MGMP</a>@endif
+        @if($mgmp || $bisaBuat)<a class="btn" href="{{ route('perangkat.kunci') }}">Kunci AI</a>@endif
+        @if($mgmp)<a class="btn" href="{{ route('perangkat.create') }}">+ Draf MGMP</a>@endif
         @if($bisaBuat)<a class="btn btn-pri" href="{{ route('perangkat.create', ['jenis' => 'guru']) }}">+ Buat sendiri</a>@endif
     </div>
 </div>

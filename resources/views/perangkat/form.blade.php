@@ -57,8 +57,8 @@
     </div>
 
     <div class="card">
-        <h2>3. Bahan ajar rujukan <small class="mut" style="font-weight:500">(opsional{{ $mg ? ', sangat disarankan bila memakai AI' : '' }})</small></h2>
-        <p class="hint" style="margin:0 0 10px">Buku siswa, modul, silabus, atau ringkasan materi. PDF, DOCX, atau TXT; maksimal 3 berkas, 8 MB per berkas. {{ $mg ? 'AI menyusun isi dokumen dari bahan ini.' : 'Bahan dilampirkan pada perangkat ajar Anda.' }}</p>
+        <h2>3. Bahan ajar rujukan <small class="mut" style="font-weight:500">(opsional, sangat disarankan bila memakai AI)</small></h2>
+        <p class="hint" style="margin:0 0 10px">Buku siswa, modul, silabus, atau ringkasan materi. PDF, DOCX, atau TXT; maksimal 3 berkas, 8 MB per berkas. Bahan dilampirkan pada perangkat dan dipakai AI sebagai rujukan.</p>
         <input type="file" name="bahan[]" accept=".pdf,.docx,.txt" multiple>
     </div>
 
@@ -69,13 +69,13 @@
             <div class="pa-mulai">
                 <label class="chk"><input type="radio" name="mulai" value="templat" @checked($mulai === 'templat')> <span><b>Templat</b><small class="mut">Kerangka langkah sesuai model pembelajaran; tinggal melengkapi bagian bertanda [ … ].</small></span></label>
                 <label class="chk"><input type="radio" name="mulai" value="kosong" @checked($mulai === 'kosong')> <span><b>Kosong — isi manual</b><small class="mut">Hanya kerangka dokumen; semua isi Anda tulis sendiri.</small></span></label>
-                @if($ai)<label class="chk"><input type="radio" name="mulai" value="ai" @checked($mulai === 'ai')> <span><b>Ditulis AI</b><small class="mut">Hanya data pembelajaran dan bahan rujukan yang dikirim ke AI (tanpa nama guru/siswa). Periksa hasilnya sebelum ditandai siap.</small></span></label>@endif
+                @if($ai)<label class="chk"><input type="radio" name="mulai" value="ai" @checked($mulai === 'ai')> <span><b>Ditulis AI</b><small class="mut">Hanya data pembelajaran dan bahan rujukan yang dikirim ke AI (tanpa nama guru/siswa). Periksa hasilnya sebelum dipakai.</small></span></label>@endif
             </div>
         </fieldset>
         @if($ai)
             <div class="field" style="margin-top:12px"><label for="catatan">Instruksi tambahan untuk AI <small class="mut">(opsional)</small></label><textarea id="catatan" name="catatan" rows="2" maxlength="1000" placeholder="mis. Gunakan contoh UMKM di Jember; LKPD dikerjakan berpasangan">{{ $v('catatan') }}</textarea></div>
-        @elseif($mg)
-            <p class="hint" style="margin:12px 0 0">Agar AI ikut menulis, isi <a href="{{ route('perangkat.kunci') }}">kunci AI</a> dulu (pribadi atau bersama MGMP).</p>
+        @else
+            <p class="hint" style="margin:12px 0 0">Agar AI ikut menulis, isi <a href="{{ route('perangkat.kunci') }}">kunci AI</a> dulu{{ $mg ? ' (pribadi atau bersama MGMP)' : ' (kunci pribadi), atau minta MGMP mapel Anda mengisi kunci bersama' }}.</p>
         @endif
     </div>
 

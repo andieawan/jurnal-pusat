@@ -87,10 +87,11 @@ mendapatkan perangkat untuk kelasnya:
 1. **Ambil draf MGMP.** Tim MGMP menyusun draf per mapel + tingkat tiap semester, boleh dengan bahan ajar rujukan
    (PDF/DOCX/TXT), lalu menandainya *siap*. Guru pengampu mapel itu tinggal mengambilnya; salinan memakai nama, NIP, dan
    kelasnya sendiri.
-2. **Buat sendiri** (tombol *+ Buat sendiri*): mulai dari **templat** (kerangka langkah sesuai model pembelajaran) atau
-   **kosong** (semua isi ditulis manual). Perangkat buatan guru tidak memakai AI, supaya kuota hemat.
+2. **Buat sendiri** (tombol *+ Buat sendiri*): mulai dari **templat** (kerangka langkah sesuai model pembelajaran),
+   **kosong** (semua isi ditulis manual), atau **ditulis AI** bila ada kunci AI.
 
-Draf MGMP juga bisa dimulai dari templat, kosong, atau ditulis AI. Semua isi bisa diubah manual lewat *Ubah isi*.
+Draf MGMP juga bisa dimulai dari templat, kosong, atau ditulis AI. Semua isi bisa diubah manual lewat *Ubah isi*, dan
+tiap dokumen bisa diisi/ditulis ulang AI lewat tombolnya.
 
 - **Anggota MGMP:** di Pusat → Akun, beri peran **mgmp** di aplikasi Jurnal Guru (selain `guru`). Draf hanya bisa
   disusun untuk mapel yang diampunya.
@@ -107,17 +108,23 @@ Draf MGMP juga bisa dimulai dari templat, kosong, atau ditulis AI. Semua isi bis
 
 ### Kunci AI dan kuota
 
-AI hanya dipakai untuk menyusun draf MGMP (sekali per draf, bukan per guru). Kunci API Gemini gratis dari
+AI dipakai untuk draf MGMP dan perangkat buatan guru. Kunci API Gemini gratis dari
 [Google AI Studio](https://aistudio.google.com/apikey). Urutan pemakaian kunci:
 
 1. **Kunci sekolah:** `GEMINI_API_KEY=...` di `.env`; dipakai semua MGMP.
 2. **Kunci bersama MGMP:** bila `.env` kosong, anggota MGMP mengisi satu kunci untuk mapelnya di
-   Perangkat Ajar → **Kunci AI** → *Kunci bersama MGMP*; dipakai semua anggota MGMP mapel itu.
-3. **Kunci pribadi:** cadangan terakhir; tiap anggota MGMP mengisi kuncinya sendiri di halaman yang sama.
+   Perangkat Ajar → **Kunci AI** → *Kunci bersama MGMP*; dipakai anggota MGMP dan semua guru pengampu mapel itu.
+3. **Kunci pribadi:** cadangan terakhir; tiap guru atau anggota MGMP mengisi kuncinya sendiri di halaman yang sama.
 
 Kunci tersimpan terenkripsi di server dan tidak pernah dikirim ke browser. Untuk membatasi pemakaian kunci sekolah/MGMP,
-isi `AI_KUOTA_MGMP=40` (jumlah dokumen yang boleh diisi AI per mapel per semester; `0` = tanpa batas), lalu
-`sudo -u www-data php artisan config:clear`. Kunci pribadi tidak dihitung kuota. Pemakaian tampil di halaman Kunci AI.
+isi di `.env` (keduanya opsional, `0` = tanpa batas), lalu `sudo -u www-data php artisan config:clear`:
+
+```ini
+AI_KUOTA_MGMP=60   # dokumen AI per mapel per semester (draf MGMP + perangkat guru mapel itu)
+AI_KUOTA_GURU=10   # dokumen AI per guru per semester untuk perangkat buatannya sendiri
+```
+
+Kunci pribadi tidak dihitung kuota. Pemakaian tampil di halaman Kunci AI.
 
 Tanpa kunci, perangkat tetap bisa dibuat dari templat atau diisi manual. Yang dikirim ke Google hanya data
 pembelajaran dan bahan rujukan, tanpa nama guru atau siswa. `GEMINI_MODEL` (bawaan `gemini-flash-latest`) bisa

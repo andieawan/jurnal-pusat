@@ -117,7 +117,7 @@ class PerangkatAjarController extends Controller
             'jenis' => $jenis, 'subjects' => $mapel, 'subjectId' => $subjectId, 'isian' => $dari?->isian ?? [],
             'classMap' => $jenis === 'guru' ? Assignments::classMap($u, $mapel) : [],
             'classes' => $jenis === 'guru' ? Assignments::classesForSubject($u, $subjectId) : collect(), 'classId' => $request->integer('class'),
-            'tingkat' => $dari->tingkat ?? ($tingkat->first() ?: 'X'), 'ai' => $jenis === 'mgmp' && PerangkatAi::tersedia($u, $subjectId),
+            'tingkat' => $dari->tingkat ?? ($tingkat->first() ?: 'X'), 'ai' => PerangkatAi::tersedia($u, $subjectId),
             'set' => SchoolSetting::current(), 'bisaMgmp' => $mgmp->isNotEmpty(),
         ]);
     }
@@ -132,7 +132,7 @@ class PerangkatAjarController extends Controller
             'subject' => 'required|integer',
             'tingkat' => $jenis === 'mgmp' ? ['required', Rule::in(['X', 'XI', 'XII'])] : 'nullable',
             'class' => $jenis === 'guru' ? 'required|integer' : 'nullable',
-            'mulai' => ['required', Rule::in($jenis === 'mgmp' ? ['templat', 'kosong', 'ai'] : ['templat', 'kosong'])],
+            'mulai' => ['required', Rule::in(['templat', 'kosong', 'ai'])],
             'topik' => 'required|string|max:200', 'tp' => 'required|string|max:2000', 'elemen' => 'nullable|string|max:300',
             'konsentrasi' => 'nullable|string|max:150',
             'alokasi' => 'required|string|max:60', 'pertemuan' => 'required|integer|min:1|max:6',
@@ -342,8 +342,9 @@ class PerangkatAjarController extends Controller
             ->filter(fn ($k) => $perangkat->tingkat === '' || Perangkat::tingkat($k) === $perangkat->tingkat)->values() : collect();
 
         return view('perangkat.show', ['p' => $perangkat, 'dok' => $dok, 'ada' => $ada, 'bisaUbah' => $bisaUbah,
-            'ai' => $perangkat->jenis === 'mgmp' && $bisaUbah && PerangkatAi::tersedia($u, $perangkat->subject_id), 'isiAi' => $request->boolean('isi_ai'),
-            'pakaiAi' => $perangkat->jenis === 'mgmp' ? PerangkatAi::pemakaian($perangkat->subject_id) : null,
+            'ai' => $bisaUbah && PerangkatAi::tersedia($u, $perangkat->subject_id), 'isiAi' => $request->boolean('isi_ai'),
+            'pakaiAi' => PerangkatAi::pemakaian($perangkat->subject_id),
+            'pakaiGuru' => $perangkat->jenis === 'guru' ? PerangkatAi::pemakaianGuru($perangkat->user_id) : null,
             'periksa' => $perangkat->jenis === 'guru' && $this->bisaPeriksa() && $perangkat->user_id !== $u->id,
             'pemilik' => $perangkat->jenis === 'guru' && $perangkat->user_id === $u->id,
             'nilai' => $perangkat->jenis === 'guru' && $perangkat->class_id && $perangkat->user_id === $u->id && isset($perangkat->hasil['asesmen']),
@@ -373,10 +374,10 @@ class PerangkatAjarController extends Controller
     /** Isi satu dokumen draf MGMP dengan AI (dipanggil berurutan oleh halaman sebagai JSON, atau lewat tombol biasa). */
     public function ai(Request $request, PerangkatAjar $perangkat, string $dok)
     {
-        abort_unless($perangkat->jenis === 'mgmp' && $this->bisaUbah($perangkat), 403);
+        abort_unless($this->bisaUbah($perangkat), 403);
         $this->dok($dok);
         try {
-            $isi = PerangkatAi::isi($perangkat->isian, $dok, $this->me(), $perangkat->subject_id);
+            $isi = PerangkatAi::isi($perangkat->isian, $dok, $this->me(), $perangkat->subject_id, $perangkat->jenis);
         } catch (RuntimeException $e) {
             return $request->expectsJson() ? response()->json(['ok' => false, 'pesan' => $e->getMessage()], 422) : back()->with('error', $e->getMessage());
         }
@@ -402,7 +403,7 @@ class PerangkatAjarController extends Controller
         }
         $perangkat->update(['isian' => $isian]);
 
-        return back()->with('success', $perangkat->jenis === 'mgmp' ? 'Bahan ajar ditambahkan. Gunakan "Tulis ulang dengan AI" agar isinya memakai bahan ini.' : 'Bahan ajar ditambahkan.');
+        return back()->with('success', 'Bahan ajar ditambahkan. Gunakan "Tulis ulang dengan AI" agar isinya memakai bahan ini.');
     }
 
     public function bahanUnduh(PerangkatAjar $perangkat, int $i)
@@ -455,13 +456,14 @@ class PerangkatAjarController extends Controller
     public function kunci()
     {
         $u = $this->me();
-        $mapel = $this->mapelMgmp($u);
+        $mgmp = $this->mapelMgmp($u);
+        $mapel = $mgmp->merge($this->mapelGuru($u))->unique('id')->sortBy('name')->values();
         abort_if($mapel->isEmpty(), 403);
         $bersama = AiKunciMgmp::whereIn('subject_id', $mapel->pluck('id'))->get()->keyBy('subject_id');
 
         return view('perangkat.kunci', ['sekolah' => PerangkatAi::kunciSekolah(), 'punya' => (string) $u->ai_key !== '',
             'akhir' => substr((string) $u->ai_key, -4), 'kuota' => max(0, (int) config('absensi.ai.kuota')),
-            'mapel' => $mapel,
+            'mapel' => $mapel, 'mgmp' => $mgmp, 'pakaiSaya' => PerangkatAi::pemakaianGuru($u->id),
             'bersama' => $bersama, 'pakai' => $mapel->mapWithKeys(fn ($m) => [$m->id => PerangkatAi::pemakaian($m->id)])]);
     }
 
@@ -469,7 +471,7 @@ class PerangkatAjarController extends Controller
     {
         $u = $this->me();
         $mapelMgmp = $this->mapelMgmp($u);
-        abort_if($mapelMgmp->isEmpty(), 403);
+        abort_if($mapelMgmp->isEmpty() && $this->mapelGuru($u)->isEmpty(), 403);
         $mapel = $request->filled('mapel') ? $mapelMgmp->firstWhere('id', $request->integer('mapel')) : null;
         abort_if($request->filled('mapel') && ! $mapel, 403);
         if ($request->boolean('hapus')) {
@@ -488,6 +490,6 @@ class PerangkatAjarController extends Controller
         $u->forceFill(['ai_key' => $d['ai_key']])->save();
         Audit::log('Simpan Kunci AI', 'Perangkat Ajar', $u->nama, 'kunci pribadi …'.substr($d['ai_key'], -4));
 
-        return redirect()->route('perangkat.kunci')->with('success', 'Kunci API tersimpan (terenkripsi). Kunci hanya dipakai untuk draf yang Anda susun.');
+        return redirect()->route('perangkat.kunci')->with('success', 'Kunci API tersimpan (terenkripsi). Kunci hanya dipakai untuk perangkat yang Anda susun.');
     }
 }

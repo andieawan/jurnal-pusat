@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Kunci API Gemini bersama per MGMP (satu per mapel, terenkripsi) dan catatan pemakaian AI untuk kuota per mapel per
- * semester (AI_KUOTA_MGMP). Aman diulang.
+ * semester (AI_KUOTA_MGMP) dan per guru (AI_KUOTA_GURU). Aman diulang.
  */
 return new class extends Migration
 {
@@ -30,8 +30,10 @@ return new class extends Migration
                 $t->string('semester', 10)->default('');
                 $t->string('dok', 10);
                 $t->string('kunci', 10);                 // sekolah | mgmp | pribadi
+                $t->string('jenis', 10)->default('mgmp'); // mgmp = draf MGMP; guru = perangkat milik guru
                 $t->string('created_at', 32)->nullable();
                 $t->index(['subject_id', 'tahun', 'semester']);
+                $t->index(['user_id', 'tahun', 'semester']);
             });
         }
     }

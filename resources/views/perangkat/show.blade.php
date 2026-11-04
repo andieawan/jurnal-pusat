@@ -89,7 +89,7 @@
         @endif
     </div>
     <small class="mut">{{ $p->dariAi($dok) ? 'Ditulis AI — periksa kebenaran isi dan sesuaikan dengan kelas sebelum dipakai.' : ($bisaUbah ? ($p->mulai === 'kosong' ? 'Diisi manual: tulis isinya lewat tombol Ubah isi.' : 'Lengkapi bagian bertanda [ … ] lewat tombol Ubah isi.') : '') }}
-        @if($pakaiAi && $ai) AI terpakai {{ $pakaiAi[0] }}{{ $pakaiAi[1] ? ' dari '.$pakaiAi[1] : '' }} dokumen semester ini untuk mapel ini.@endif</small>
+        @if($ai) AI terpakai {{ $pakaiAi[0] }}{{ $pakaiAi[1] ? ' dari '.$pakaiAi[1] : '' }} dokumen semester ini untuk mapel ini{{ $pakaiGuru && $pakaiGuru[1] ? '; kuota Anda '.$pakaiGuru[0].' dari '.$pakaiGuru[1] : '' }}.@endif</small>
 </div>
 
 @if($bisaUbah || ($p->isian['bahan'] ?? []))
