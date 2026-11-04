@@ -385,6 +385,35 @@ body[data-app=pkl]{--pri:#0e5f70;--pri-d:#0b4b59;--pri-bg:#e4f1f4;--pri-line:#9f
 .req{color:var(--bad)}
 .tbl tr.row-on td{background:var(--pri-bg)}
 
+/* ---- Perangkat ajar ---- */
+fieldset.pilih{border:0;padding:0;margin:0 0 14px;min-width:0}
+fieldset.pilih>legend{font-size:13.5px;font-weight:600;color:var(--ink2);margin-bottom:6px;padding:0}
+.pilih-isi{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr));gap:2px 14px}
+.pilih-isi .chk{margin:0}
+.ai-pilih{margin-top:14px;padding:12px 14px;border:1px solid var(--pri-line);background:var(--pri-bg);border-radius:10px;align-items:flex-start}
+.ai-pilih input{margin-top:2px}
+.ai-antre{border-color:var(--pri)}.ai-antre ol{margin:8px 0 0;padding-left:20px}.ai-antre li{margin:4px 0}
+.ai-antre li.jalan span{color:var(--pri-d);font-weight:700}.ai-antre li.ok span{color:var(--ok);font-weight:700}.ai-antre li.gagal span{color:var(--bad);font-weight:700}
+.pa-aksi .row{margin-bottom:6px}
+.pa-baris{border:1px solid var(--line);border-radius:10px;padding:12px 14px 2px;margin-bottom:10px;background:#fafcfa}
+.pa-baris:last-child{border-style:dashed;background:#fff}
+.pa-baris-kepala{font-size:12.5px;font-weight:700;color:var(--mut);margin-bottom:8px}
+.letter.pa{font-size:12pt}
+.pa .pa-judul{font-size:14pt;text-align:center;margin:6px 0 2px;letter-spacing:.02em}
+.pa .pa-sub{text-align:center;margin:0 0 12px;font-style:italic}
+.pa .pa-h{font-size:12.5pt;margin:16px 0 6px}
+.pa table.pa-tbl{width:100%;border-collapse:collapse;margin:0 0 10px}
+.pa .pa-tbl th,.pa .pa-tbl td{border:1px solid #000;padding:5px 7px;vertical-align:top;text-align:left;font-size:11.5pt}
+.pa .pa-tbl th{background:#e7f3eb;width:26%;font-weight:700}
+.pa .pa-id th{width:17%}.pa .pa-rubrik th{width:auto}
+.pa .pa-tbl th.pa-sel{background:#cfe4d6;width:auto}
+.pa ol{margin:0;padding-left:20px}.pa li{margin:1px 0}
+.pa .pa-kosong{height:52px}.pa .pa-jawab{height:76px;border-top:1px dashed #888;margin-top:8px;padding-top:4px;color:#555;font-size:10.5pt}
+.pa .pa-isi{white-space:pre-line}.pa .pa-lead{font-style:italic}
+.pa table.pa-ttd{width:100%;margin-top:30px;border-collapse:collapse}.pa .pa-ttd td{width:50%;text-align:center;vertical-align:top;border:0}.pa .pa-sp{height:64px}
+@media(max-width:640px){.pa .pa-tbl th,.pa .pa-tbl td{font-size:10pt;padding:4px 5px}.pa .pa-id th,.pa .pa-id td{display:block;width:auto;border-top:0}.pa .pa-id tr:first-child th:first-child{border-top:1px solid #000}}
+@media print{.subtab,.back-link{display:none!important}.pa .pa-tbl tr{page-break-inside:avoid}}
+
 html{background:var(--bg)}
 input[type=file]{padding:6px}
 input[type=file]::file-selector-button{min-height:34px;margin-right:12px;padding:0 14px;border:1px solid var(--pri-line);border-radius:8px;background:var(--pri-bg);color:var(--pri-d);font:600 14px/1 "Plus Jakarta Sans",system-ui,sans-serif;cursor:pointer}
