@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Absensi Siswa'),
+    'name' => env('APP_NAME', 'Jurnal Guru'),
 
     /*
     |--------------------------------------------------------------------------

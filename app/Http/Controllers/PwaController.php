@@ -14,16 +14,16 @@ class PwaController extends Controller
 
         return response()->json([
             'id' => $base,
-            'name' => 'Absensi Siswa — '.$school,
-            'short_name' => 'Absensi',
+            'name' => 'Jurnal Guru — '.$school,
+            'short_name' => 'Jurnal Guru',
             'description' => 'Absensi, nilai, dan pemantauan kehadiran siswa '.$school.'.',
             'lang' => 'id',
             'start_url' => $base,
             'scope' => $base,
             'display' => 'standalone',
             'orientation' => 'any',
-            'background_color' => '#f8fafc',
-            'theme_color' => '#4f46e5',
+            'background_color' => '#f1f4f0',
+            'theme_color' => '#143f2a',
             'categories' => ['education', 'productivity'],
             'icons' => [
                 ['src' => asset('icons/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],

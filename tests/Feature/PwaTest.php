@@ -11,7 +11,7 @@ class PwaTest extends TestCase
         $this->get('/manifest.webmanifest')->assertOk()
             ->assertHeader('Content-Type', 'application/manifest+json')
             ->assertJsonPath('display', 'standalone')
-            ->assertJsonPath('short_name', 'Absensi')
+            ->assertJsonPath('short_name', 'Jurnal Guru')
             ->assertJsonCount(3, 'icons')
             ->assertJsonPath('icons.2.purpose', 'maskable');
         $this->get('/login')->assertSee('rel="manifest"', false)->assertSee('pwa-install', false)->assertSee('apple-touch-icon', false);

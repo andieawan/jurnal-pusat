@@ -4,21 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Absensi' }} · {{ $settings->school_name }}</title>
+    <title>{{ $title ?? 'Jurnal Guru' }} · {{ $settings->school_name }}</title>
     <script>document.documentElement.classList.add('js')</script>
     <link rel="stylesheet" href="{{ asset('assets/app.css') }}?v={{ @filemtime(public_path('assets/app.css')) }}">
     <link rel="manifest" href="{{ route('manifest') }}">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="theme-color" content="#143f2a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Absensi">
+    <meta name="apple-mobile-web-app-title" content="Jurnal Guru">
     <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}?v={{ @filemtime(public_path('icons/apple-touch-icon.png')) }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('icons/icon-192.png') }}?v={{ @filemtime(public_path('icons/icon-192.png')) }}">
     <meta name="sw-url" content="{{ asset('sw.js') }}">
     @stack('head')
 </head>
-<body @class(['bare' => $bare ?? false, 'has-bottom-nav' => auth()->check() && ! ($bare ?? false)])>
+<body data-app="jurnal" @class(['bare' => $bare ?? false, 'has-bottom-nav' => auth()->check() && ! ($bare ?? false)])>
 <a class="skip" href="#isi">Lompat ke isi halaman</a>
 {{-- Ikon (SVG sederhana, tanpa library luar) --}}
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -39,7 +39,7 @@
     @php
         $me = auth()->user();
         $tabs = [
-            ['dashboard', 'Dashboard', 'Beranda', 'i-home', 'dashboard'],
+            ['dashboard', 'Beranda', 'Beranda', 'i-home', 'dashboard'],
             ['mengajar', 'Mengajar', 'Mengajar', 'i-book', 'mengajar*'],
             ['attendance', 'Absensi', 'Absensi', 'i-check', 'attendance*'],
             ['grades', 'Nilai', 'Nilai', 'i-star', 'grades*'],
@@ -57,7 +57,7 @@
         $initial = mb_strtoupper(mb_substr(trim(preg_replace('/^(Dra?\.|Drs\.|Ir\.|H\.|Hj\.)\s*/i', '', $me->nama)), 0, 1));
     @endphp
     <header class="nav"><div class="nav-in">
-        <a class="brand" href="{{ route('dashboard') }}"><img class="logo-img" src="{{ asset('icons/icon-192.png') }}?v={{ @filemtime(public_path('icons/icon-192.png')) }}" alt="" width="36" height="36"><span><b>Absensi Siswa</b><small>{{ $settings->school_name }}</small></span></a>
+        <a class="brand" href="{{ route('dashboard') }}"><img class="logo-img" src="{{ asset('icons/icon-192.png') }}?v={{ @filemtime(public_path('icons/icon-192.png')) }}" alt="" width="38" height="38"><span><b>Jurnal Guru</b><small>{{ $settings->school_name }}</small></span></a>
         <nav class="tabs" aria-label="Menu utama">
             @foreach(array_merge($tabs, $extra) as [$r, $label, , $icon, $pat])
                 <a href="{{ ($r === 'bk.home' && config('absensi.bk_url')) ? config('absensi.bk_url') : (($r === 'tu.home' && config('absensi.tu_url')) ? config('absensi.tu_url') : (($r === 'selfcheck' && config('absensi.tu_url')) ? rtrim(config('absensi.tu_url'), '/').'/absen-saya' : route($r))) }}" @if(request()->routeIs($pat)) class="on" aria-current="page" @endif><svg class="ic"><use href="#{{ $icon }}"/></svg>{{ $label }}</a>
