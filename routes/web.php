@@ -57,10 +57,18 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/perangkat', [\App\Http\Controllers\PerangkatAjarController::class, 'index'])->name('perangkat');
     Route::get('/perangkat/baru', [\App\Http\Controllers\PerangkatAjarController::class, 'create'])->name('perangkat.create');
     Route::post('/perangkat', [\App\Http\Controllers\PerangkatAjarController::class, 'store'])->middleware('throttle:20,1')->name('perangkat.store');
+    Route::get('/perangkat/kunci', [\App\Http\Controllers\PerangkatAjarController::class, 'kunci'])->name('perangkat.kunci');
+    Route::put('/perangkat/kunci', [\App\Http\Controllers\PerangkatAjarController::class, 'kunciSimpan'])->middleware('throttle:10,1')->name('perangkat.kunci.simpan');
     Route::get('/perangkat/{perangkat}', [\App\Http\Controllers\PerangkatAjarController::class, 'show'])->whereNumber('perangkat')->name('perangkat.show');
+    Route::post('/perangkat/{perangkat}/status', [\App\Http\Controllers\PerangkatAjarController::class, 'status'])->whereNumber('perangkat')->name('perangkat.status');
+    Route::post('/perangkat/{perangkat}/ambil', [\App\Http\Controllers\PerangkatAjarController::class, 'ambil'])->whereNumber('perangkat')->name('perangkat.ambil');
+    Route::put('/perangkat/{perangkat}/identitas', [\App\Http\Controllers\PerangkatAjarController::class, 'identitas'])->whereNumber('perangkat')->name('perangkat.identitas');
     Route::get('/perangkat/{perangkat}/ubah/{dok}', [\App\Http\Controllers\PerangkatAjarController::class, 'edit'])->whereNumber('perangkat')->name('perangkat.edit');
     Route::put('/perangkat/{perangkat}/ubah/{dok}', [\App\Http\Controllers\PerangkatAjarController::class, 'update'])->whereNumber('perangkat')->name('perangkat.update');
     Route::post('/perangkat/{perangkat}/ai/{dok}', [\App\Http\Controllers\PerangkatAjarController::class, 'ai'])->whereNumber('perangkat')->middleware('throttle:20,1')->name('perangkat.ai');
+    Route::post('/perangkat/{perangkat}/bahan', [\App\Http\Controllers\PerangkatAjarController::class, 'bahanTambah'])->whereNumber('perangkat')->middleware('throttle:10,1')->name('perangkat.bahan');
+    Route::get('/perangkat/{perangkat}/bahan/{i}', [\App\Http\Controllers\PerangkatAjarController::class, 'bahanUnduh'])->whereNumber(['perangkat', 'i'])->name('perangkat.bahan.unduh');
+    Route::delete('/perangkat/{perangkat}/bahan/{i}', [\App\Http\Controllers\PerangkatAjarController::class, 'bahanHapus'])->whereNumber(['perangkat', 'i'])->name('perangkat.bahan.hapus');
     Route::get('/perangkat/{perangkat}/unduh/{dok}', [\App\Http\Controllers\PerangkatAjarController::class, 'unduh'])->whereNumber('perangkat')->name('perangkat.unduh');
     Route::delete('/perangkat/{perangkat}', [\App\Http\Controllers\PerangkatAjarController::class, 'destroy'])->whereNumber('perangkat')->name('perangkat.destroy');
     Route::delete('/mengajar/{jurnal}', [\App\Http\Controllers\MengajarController::class, 'destroy'])->name('mengajar.destroy');

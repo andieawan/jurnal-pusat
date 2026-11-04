@@ -40,15 +40,23 @@ final class Perangkat
 
     public const MEDIA = ['Slide presentasi', 'Video pembelajaran', 'Internet & sumber web', 'LKPD digital', 'LMS (Google Classroom/Moodle)', 'Kuis daring', 'Simulator', 'Perangkat lunak kejuruan', 'Alat & bahan praktik'];
 
-    /** Fase dari nama kelas ("X RPL 1" → E, "XI …"/"XII …" → F). */
-    public static function fase(?SchoolClass $k): string
+    /** Tingkat dari nama kelas: "X RPL 1" → X, "XII TKJ 2" → XII. */
+    public static function tingkat(?SchoolClass $k): string
     {
         $t = strtoupper((string) strtok(trim((string) $k?->name), ' '));
 
+        return ['10' => 'X', '11' => 'XI', '12' => 'XII'][$t] ?? (in_array($t, ['X', 'XI', 'XII', 'VII', 'VIII', 'IX'], true) ? $t : '');
+    }
+
+    /** Fase dari tingkat (atau kelas): X → E, XI/XII → F. */
+    public static function fase(SchoolClass|string|null $k): string
+    {
+        $t = is_string($k) ? $k : self::tingkat($k);
+
         return match ($t) {
-            'X', '10' => 'E',
-            'XI', 'XII', '11', '12' => 'F',
-            'VII', 'VIII', 'IX', '7', '8', '9' => 'D',
+            'X' => 'E',
+            'XI', 'XII' => 'F',
+            'VII', 'VIII', 'IX' => 'D',
             default => '',
         };
     }

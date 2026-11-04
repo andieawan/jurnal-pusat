@@ -26,5 +26,6 @@ return [
         'tu' => 'tu',
         'kepsek' => 'kepsek',
         'admin' => 'admin',
+        'mgmp' => 'mgmp', // tim MGMP: menyusun draf perangkat ajar untuk mapel yang diampu
     ],
 ];

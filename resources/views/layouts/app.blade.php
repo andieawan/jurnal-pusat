@@ -47,7 +47,7 @@
             ['students', 'Siswa', 'Siswa', 'i-users', 'students*'],
         ];
         $extra = [];
-        if ($me->can('perangkat-buat') || $me->hasRole('kepsek')) $extra[] = ['perangkat', 'Perangkat Ajar', 'Perangkat', 'i-file', 'perangkat*'];
+        if ($me->can('perangkat')) $extra[] = ['perangkat', 'Perangkat Ajar', 'Perangkat', 'i-file', 'perangkat*'];
         if ($me->can('absen-mandiri') && \App\Services\StaffService::selfActive()) $extra[] = ['selfcheck', 'Absen Saya', 'Absen Saya', 'i-clock', 'selfcheck'];
         if ($me->can('lihat-sekolah')) $extra[] = ['monitor', 'Pantau', 'Pantau', 'i-eye', 'monitor'];
         // Modul TU/BK sudah menjadi aplikasi sendiri bila alamatnya diisi: tidak ditampilkan lagi di menu Absensi

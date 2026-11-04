@@ -1,19 +1,43 @@
 @extends('layouts.app', ['title' => $p->topik])
 @section('content')
 @php($D = \App\Services\Perangkat::DOKUMEN)
-<a class="back-link noprint" href="{{ route('perangkat') }}">‹ Daftar perangkat ajar</a>
+@php($draf = $p->jenis === 'mgmp')
+<a class="back-link noprint" href="{{ route('perangkat') }}">‹ Perangkat ajar</a>
 <div class="head noprint">
     <div>
         <h1>{{ $p->topik }}</h1>
-        <small>{{ $p->isian['mapel'] }} · {{ $p->isian['kelas'] }} · {{ $p->guru?->nama }}</small>
+        <small>
+            @if($draf)
+                Draf MGMP · {{ $p->isian['mapel'] }} · kelas {{ $p->tingkat }} · {{ $p->semester }} {{ $p->tahun }} · disusun {{ $p->guru?->nama }}
+                <span @class(['badge', 'b-ok' => $p->status === 'siap', 'b-warn' => $p->status !== 'siap'])>{{ $p->status === 'siap' ? 'siap dipakai guru' : 'masih draf' }}</span>
+            @else
+                {{ $p->isian['mapel'] }} · {{ $p->kelas?->name ?? $p->isian['kelas'] }} · {{ $p->guru?->nama }}
+                @if($asal) · dari draf MGMP @if($asal->updated_at > $p->created_at)<span class="badge b-warn" title="Draf MGMP diubah setelah Anda mengambilnya">draf MGMP diperbarui</span>@endif @endif
+            @endif
+        </small>
     </div>
     <div class="row">
-        <a class="btn" href="{{ route('mengajar', ['subject' => $p->subject_id, 'class' => $p->class_id]) }}">Buka Mengajar</a>
-        @can('perangkat-buat')<a class="btn" href="{{ route('perangkat.create', ['dari' => $p->id]) }}">Salin jadi baru</a>@endcan
+        @if($draf && $bisaUbah)
+            <form method="post" action="{{ route('perangkat.status', $p) }}" class="inline">@csrf<button @class(['btn', 'btn-pri' => $p->status !== 'siap'])>{{ $p->status === 'siap' ? 'Kembalikan ke draf' : 'Tandai siap dipakai guru' }}</button></form>
+            <a class="btn" href="{{ route('perangkat.create', ['dari' => $p->id]) }}">Salin jadi draf baru</a>
+        @elseif(! $draf)
+            <a class="btn" href="{{ route('mengajar', ['subject' => $p->subject_id, 'class' => $p->class_id]) }}">Buka Mengajar</a>
+        @endif
     </div>
 </div>
 
-@if($isiAi && $bolehUbah)
+@if($draf && $kelasAmbil->isNotEmpty() && ($p->status === 'siap' || $bisaUbah))
+    <form method="post" action="{{ route('perangkat.ambil', $p) }}" class="card filter-card noprint ambil">
+        @csrf
+        <div class="fields">
+            <div><label for="ambil-kelas">Ambil draf ini untuk kelas</label><select id="ambil-kelas" name="class">@foreach($kelasAmbil as $k)<option value="{{ $k->id }}">{{ $k->name }}</option>@endforeach</select></div>
+            <div class="row"><button class="btn btn-pri">Ambil jadi perangkat ajar saya</button></div>
+        </div>
+        <small class="mut">Salinan memakai nama, NIP, dan kelas Anda. Draf MGMP tetap utuh.</small>
+    </form>
+@endif
+
+@if($isiAi && $ai)
     <div class="card ai-antre noprint" data-ai-antre="{{ collect($ada)->map(fn ($d) => route('perangkat.ai', [$p, $d]))->implode(' ') }}">
         <h2>AI sedang menyusun dokumen</h2>
         <p class="mut">Biasanya 10–40 detik per dokumen. Jangan tutup halaman ini.</p>
@@ -29,19 +53,49 @@
     <div class="row">
         <button type="button" class="btn btn-pri" onclick="window.print()">Cetak / Simpan PDF</button>
         <a class="btn" href="{{ route('perangkat.unduh', [$p, $dok]) }}">Unduh Word</a>
-        @if($bolehUbah)
+        @if($bisaUbah)
             <a class="btn" href="{{ route('perangkat.edit', [$p, $dok]) }}">Ubah isi</a>
             @if($ai)
                 <form method="post" action="{{ route('perangkat.ai', [$p, $dok]) }}" class="inline" data-confirm="Isi {{ $D[$dok] }} akan diganti tulisan AI yang baru. Lanjutkan?">@csrf<button class="btn">{{ $p->dariAi($dok) ? 'Tulis ulang dengan AI' : 'Isi dengan AI' }}</button></form>
             @endif
         @endif
     </div>
-    @if(! $p->dariAi($dok))<small class="mut">{{ $bolehUbah ? 'Draf templat: lengkapi bagian bertanda [ … ] lewat tombol Ubah isi.' : 'Draf templat.' }}</small>@else<small class="mut">Ditulis AI — periksa kebenaran isi dan sesuaikan dengan kelas Anda sebelum dipakai.</small>@endif
+    <small class="mut">{{ $p->dariAi($dok) ? 'Ditulis AI — periksa kebenaran isi dan sesuaikan dengan kelas sebelum dipakai.' : ($bisaUbah ? 'Draf templat: lengkapi bagian bertanda [ … ] lewat tombol Ubah isi.' : 'Draf templat.') }}</small>
 </div>
+
+@if($draf && ($bisaUbah || ($p->isian['bahan'] ?? [])))
+    <div class="card noprint">
+        <h2>Bahan ajar rujukan</h2>
+        @forelse($p->isian['bahan'] ?? [] as $i => $b)
+            <div class="row pa-bahan">
+                <a href="{{ route('perangkat.bahan.unduh', [$p, $i]) }}">{{ $b['nama'] }}</a> <small class="mut">{{ number_format($b['ukuran'] / 1048576, 1, ',', '.') }} MB</small>
+                @if($bisaUbah)<form method="post" action="{{ route('perangkat.bahan.hapus', [$p, $i]) }}" class="inline" data-confirm="Hapus bahan “{{ $b['nama'] }}”?">@csrf @method('DELETE')<button class="btn btn-sm btn-danger">Hapus</button></form>@endif
+            </div>
+        @empty
+            <p class="mut">Belum ada. Bahan rujukan membuat tulisan AI sesuai buku/modul yang dipakai sekolah.</p>
+        @endforelse
+        @if($bisaUbah && count($p->isian['bahan'] ?? []) < \App\Services\BahanAjar::MAKS_BERKAS)
+            <form method="post" action="{{ route('perangkat.bahan', $p) }}" enctype="multipart/form-data" class="row" style="margin-top:10px">@csrf
+                <input type="file" name="bahan[]" accept=".pdf,.docx,.txt" multiple required style="flex:1;min-width:200px"><button class="btn">Unggah</button></form>
+        @endif
+    </div>
+@endif
+
+@if(! $draf && $bisaUbah)
+    <details class="card noprint">
+        <summary class="link-summary">Ubah identitas (NIP, konsentrasi, alokasi waktu)</summary>
+        <form method="post" action="{{ route('perangkat.identitas', $p) }}" class="fields" style="margin-top:10px">@csrf @method('PUT')
+            <div><label for="id-nip">NIP / NUPTK</label><input id="id-nip" type="text" name="nip" maxlength="40" value="{{ $p->isian['nip'] }}"></div>
+            <div><label for="id-kons">Konsentrasi keahlian</label><input id="id-kons" type="text" name="konsentrasi" maxlength="150" value="{{ $p->isian['konsentrasi'] }}"></div>
+            <div><label for="id-alok">Alokasi waktu</label><input id="id-alok" type="text" name="alokasi" maxlength="60" required value="{{ $p->isian['alokasi'] }}"></div>
+            <div class="row"><button class="btn btn-pri">Simpan identitas</button></div>
+        </form>
+    </details>
+@endif
 
 <article class="letter pa">@include('perangkat._dokumen')</article>
 
-@if($bolehUbah)
-    <form method="post" action="{{ route('perangkat.destroy', $p) }}" class="noprint" style="margin-top:18px" data-confirm="Hapus perangkat ajar “{{ $p->topik }}” beserta semua dokumennya?">@csrf @method('DELETE')<button class="btn btn-danger btn-sm">Hapus perangkat ajar ini</button></form>
+@if($bisaUbah)
+    <form method="post" action="{{ route('perangkat.destroy', $p) }}" class="noprint" style="margin-top:18px" data-confirm="Hapus “{{ $p->topik }}” beserta semua dokumennya?">@csrf @method('DELETE')<button class="btn btn-danger btn-sm">Hapus {{ $draf ? 'draf MGMP' : 'perangkat ajar' }} ini</button></form>
 @endif
 @endsection

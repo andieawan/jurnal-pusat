@@ -11,14 +11,14 @@ class User extends Authenticatable
 
     public $timestamps = false;
     protected $guarded = [];
-    protected $hidden = ['password_hash', 'password_pusat'];
+    protected $hidden = ['password_hash', 'password_pusat', 'ai_key'];
     protected $rememberTokenName = ''; // fitur "ingat saya" tidak dipakai
 
     protected function casts(): array
     {
         return [
             'id' => 'integer', 'kelas_wali_id' => 'integer', 'is_active' => 'boolean',
-            'roles' => 'array', 'subjects' => 'array', 'classes' => 'array',
+            'roles' => 'array', 'subjects' => 'array', 'classes' => 'array', 'ai_key' => 'encrypted',
         ];
     }
 
@@ -54,7 +54,7 @@ class User extends Authenticatable
 
     public function roleLabel(): string
     {
-        $map = ['superadmin' => 'Superadmin', 'admin' => 'Admin', 'kepsek' => 'Kepala Sekolah', 'bk' => 'Guru BK', 'tu' => 'Tata Usaha', 'guru' => 'Guru'];
+        $map = ['superadmin' => 'Superadmin', 'admin' => 'Admin', 'kepsek' => 'Kepala Sekolah', 'bk' => 'Guru BK', 'tu' => 'Tata Usaha', 'guru' => 'Guru', 'mgmp' => 'MGMP'];
 
         return implode(' · ', array_map(fn ($r) => $map[$r] ?? $r, $this->roles ?? []));
     }

@@ -49,7 +49,7 @@ class DemoSeeder extends Seeder
         Sequence::atLeast('subjects', 5);
 
         $accounts = [
-            ['ibu.siti', 'Siti Aminah, S.Pd.', ['guru'], 1, [1], [1, 2]], ['pak.hendra', 'Hendra Pratama, S.Si.', ['guru'], 2, [2], [1, 2, 3]],
+            ['ibu.siti', 'Siti Aminah, S.Pd.', ['guru', 'mgmp'], 1, [1], [1, 2]], ['pak.hendra', 'Hendra Pratama, S.Si.', ['guru'], 2, [2], [1, 2, 3]],
             ['bu.ratna', 'Dra. Ratna Kusuma, M.Pd.', ['kepsek'], null, [], []], ['bu.maya', 'Maya Rosita, S.Psi.', ['bk'], null, [5], [1, 2, 3, 4]],
             ['bu.tata', 'Tata Lestari, S.Pd.', ['tu'], null, [], []],
         ];
@@ -85,8 +85,13 @@ class DemoSeeder extends Seeder
                 'topik' => 'Teks prosedur kompleks', 'tp' => "Menganalisis struktur teks prosedur\nMenyusun teks prosedur pembuatan poster", 'elemen' => 'Menulis',
                 'alokasi' => '2 x 45 menit', 'pertemuan' => 2, 'model' => 'Problem Based Learning (PBL)', 'metode' => ['Diskusi kelompok', 'Presentasi'],
                 'dimensi' => ['Penalaran kritis', 'Komunikasi'], 'lingkungan' => ['Ruang kelas'], 'media' => ['Slide presentasi'], 'kesiapan' => '', 'sarana' => '', 'catatan' => ''];
-            \App\Models\PerangkatAjar::create(['user_id' => $ids['ibu.siti'], 'subject_id' => 1, 'class_id' => 1, 'topik' => $in['topik'], 'isian' => $in,
-                'hasil' => collect(array_keys(\App\Services\Perangkat::DOKUMEN))->mapWithKeys(fn ($d) => [$d => \App\Services\Perangkat::templat($in, $d)])->all()]);
+            $in['guru'] = 'Tim MGMP Bahasa Indonesia';
+            $in['kelas'] = 'Kelas XI';
+            $hasil = collect(array_keys(\App\Services\Perangkat::DOKUMEN))->mapWithKeys(fn ($d) => [$d => \App\Services\Perangkat::templat($in, $d)])->all();
+            $draf = \App\Models\PerangkatAjar::create(['jenis' => 'mgmp', 'status' => 'siap', 'user_id' => $ids['ibu.siti'], 'subject_id' => 1, 'tingkat' => 'XI',
+                'tahun' => '2026/2027', 'semester' => 'Ganjil', 'topik' => $in['topik'], 'isian' => $in + ['bahan' => []], 'hasil' => $hasil]);
+            \App\Models\PerangkatAjar::create(['jenis' => 'guru', 'user_id' => $ids['ibu.siti'], 'subject_id' => 1, 'class_id' => 1, 'tingkat' => 'XI', 'tahun' => '2026/2027',
+                'semester' => 'Ganjil', 'topik' => $in['topik'], 'isian' => array_merge($in, ['guru' => 'Siti Aminah, S.Pd.', 'kelas' => 'XI DKV 1', 'bahan' => []]), 'hasil' => $hasil, 'dari_id' => $draf->id]);
         }
         $this->command?->info("Data contoh dibuat: 4 kelas, $sid siswa, absensi 4 minggu terakhir.");
     }

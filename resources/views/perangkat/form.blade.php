@@ -1,31 +1,26 @@
-@extends('layouts.app', ['title' => 'Buat Perangkat Ajar'])
+@extends('layouts.app', ['title' => 'Draf MGMP Baru'])
 @section('content')
 @php
     $v = fn (string $k, $def = '') => old($k, $isian[$k] ?? $def);
     $cek = fn (string $k, string $opsi, array $def = []) => in_array($opsi, (array) old($k, $isian[$k] ?? $def), true);
-    $kelas = $classes->firstWhere('id', $classId);
 @endphp
 <a class="back-link" href="{{ route('perangkat') }}">‹ Daftar perangkat ajar</a>
 <div class="head">
     <div>
-        <h1>Buat Perangkat Ajar</h1>
-        <small>Isi yang Anda ketahui; sisanya bisa dilengkapi setelah draf jadi.</small>
+        <h1>Draf MGMP Baru</h1>
+        <small>Draf ini dipakai bersama guru mapel {{ $set->semester }} {{ $set->tahun_ajaran }}. Isi yang Anda ketahui; sisanya bisa dilengkapi setelah draf jadi.</small>
     </div>
 </div>
 
-@if($subjects->isEmpty())
-    <div class="alert alert-warn"><span class="alert-ic" aria-hidden="true">!</span><span class="alert-txt">Belum ada mapel yang Anda ampu. Minta admin mengatur Pengampu Mapel di Pusat.</span></div>
-@else
-<form method="post" action="{{ route('perangkat.store') }}" data-unsaved>
+<form method="post" action="{{ route('perangkat.store') }}" enctype="multipart/form-data" data-unsaved>
     @csrf
     <div class="card">
-        <h2>1. Mapel & kelas</h2>
-        <p class="hint" style="margin:0 0 14px">Nama guru, sekolah, kepala sekolah, tahun ajaran ({{ $set->tahun_ajaran }} · {{ $set->semester }}), dan fase diambil otomatis.</p>
+        <h2>1. Mapel & tingkat</h2>
+        <p class="hint" style="margin:0 0 14px">Sekolah, kepala sekolah, dan fase diisi otomatis. Nama guru, NIP, dan kelas diganti otomatis saat guru mengambil draf.</p>
         <div class="fields">
-            <div><label for="subject">Mata pelajaran</label><select id="subject" name="subject" data-class-map='@json($classMap)'>@foreach($subjects as $s)<option value="{{ $s->id }}" @selected($s->id === $subjectId)>{{ $s->name }}</option>@endforeach</select></div>
-            <div><label for="class">Kelas</label><select id="class" name="class">@foreach($classes as $k)<option value="{{ $k->id }}" @selected($k->id === $classId)>{{ $k->name }}</option>@endforeach</select></div>
-            <div><label for="konsentrasi">Konsentrasi keahlian</label><input id="konsentrasi" type="text" name="konsentrasi" maxlength="150" value="{{ $v('konsentrasi', $kelas->jurusan ?? '') }}" placeholder="mis. Desain Komunikasi Visual"></div>
-            <div><label for="nip">NIP / NUPTK Anda <small class="mut">(opsional)</small></label><input id="nip" type="text" name="nip" maxlength="40" value="{{ old('nip', $nip) }}"></div>
+            <div><label for="subject">Mata pelajaran</label><select id="subject" name="subject">@foreach($subjects as $s)<option value="{{ $s->id }}" @selected($s->id === $subjectId)>{{ $s->name }}</option>@endforeach</select></div>
+            <div><label for="tingkat">Tingkat</label><select id="tingkat" name="tingkat">@foreach(['X' => 'Kelas X (Fase E)', 'XI' => 'Kelas XI (Fase F)', 'XII' => 'Kelas XII (Fase F)'] as $t => $label)<option value="{{ $t }}" @selected(old('tingkat', $tingkat) === $t)>{{ $label }}</option>@endforeach</select></div>
+            <div><label for="konsentrasi">Konsentrasi keahlian <small class="mut">(kosong = ikut kelas guru)</small></label><input id="konsentrasi" type="text" name="konsentrasi" maxlength="150" value="{{ $v('konsentrasi') }}" placeholder="mis. Desain Komunikasi Visual"></div>
             <div><label for="alokasi">Alokasi waktu per pertemuan</label><input id="alokasi" type="text" name="alokasi" maxlength="60" required value="{{ $v('alokasi', '2 x 45 menit') }}"></div>
             <div><label for="pertemuan">Jumlah pertemuan</label><input id="pertemuan" type="number" name="pertemuan" min="1" max="6" required value="{{ $v('pertemuan', 1) }}"></div>
         </div>
@@ -55,20 +50,25 @@
     </div>
 
     <div class="card">
-        <h2>3. Dokumen yang dibuat</h2>
+        <h2>3. Bahan ajar rujukan <small class="mut" style="font-weight:500">(opsional, sangat disarankan bila memakai AI)</small></h2>
+        <p class="hint" style="margin:0 0 10px">Buku siswa, modul, silabus, atau ringkasan materi. PDF, DOCX, atau TXT; maksimal 3 berkas, 8 MB per berkas. AI menyusun isi dokumen dari bahan ini.</p>
+        <input type="file" name="bahan[]" accept=".pdf,.docx,.txt" multiple>
+    </div>
+
+    <div class="card">
+        <h2>4. Dokumen yang dibuat</h2>
         <div class="pilih-isi">@foreach(\App\Services\Perangkat::DOKUMEN as $k => $label)<label class="chk"><input type="checkbox" name="dokumen[]" value="{{ $k }}" @checked(in_array($k, (array) old('dokumen', array_keys(\App\Services\Perangkat::DOKUMEN)), true))> {{ $label }}</label>@endforeach</div>
         @if($ai)
-            <label class="chk ai-pilih"><input type="checkbox" name="pakai_ai" value="1" @checked(old('pakai_ai', true))> <span><b>Isi dengan AI</b><small class="mut" style="display:block">Hanya data pembelajaran yang dikirim ke AI (tanpa nama guru/siswa). Periksa hasilnya sebelum dipakai.</small></span></label>
+            <label class="chk ai-pilih"><input type="checkbox" name="pakai_ai" value="1" @checked(old('pakai_ai', true))> <span><b>Isi dengan AI</b><small class="mut" style="display:block">Hanya data pembelajaran dan bahan rujukan yang dikirim ke AI (tanpa nama guru/siswa). Periksa hasilnya sebelum ditandai siap.</small></span></label>
             <div class="field" style="margin-top:12px"><label for="catatan">Instruksi tambahan untuk AI <small class="mut">(opsional)</small></label><textarea id="catatan" name="catatan" rows="2" maxlength="1000" placeholder="mis. Gunakan contoh UMKM di Jember; LKPD dikerjakan berpasangan">{{ $v('catatan') }}</textarea></div>
         @else
-            <p class="hint" style="margin:12px 0 0">Draf disusun dari templat sesuai model pembelajaran yang dipilih. (Asisten AI belum diaktifkan admin.)</p>
+            <p class="hint" style="margin:12px 0 0">Draf disusun dari templat sesuai model pembelajaran yang dipilih. Agar AI ikut menulis, isi <a href="{{ route('perangkat.kunci') }}">kunci AI</a> Anda dulu.</p>
         @endif
     </div>
 
     <div class="sticky-save">
         <small class="mut hide-sm">Draf bisa diubah, dicetak, dan diunduh setelah dibuat.</small>
-        <button class="btn btn-pri">Buat draf perangkat ajar</button>
+        <button class="btn btn-pri">Buat draf MGMP</button>
     </div>
 </form>
-@endif
 @endsection

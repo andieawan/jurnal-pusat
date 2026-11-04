@@ -12,9 +12,20 @@ use RuntimeException;
  */
 final class PerangkatAi
 {
-    public static function tersedia(): bool
+    /** Kunci yang dipakai: kunci sekolah di .env, atau kunci pribadi guru MGMP bila .env kosong. */
+    public static function kunci(?\App\Models\User $u): string
+    {
+        return (string) config('absensi.ai.key') ?: (string) ($u?->ai_key ?? '');
+    }
+
+    public static function kunciSekolah(): bool
     {
         return (string) config('absensi.ai.key') !== '';
+    }
+
+    public static function tersedia(?\App\Models\User $u): bool
+    {
+        return self::kunci($u) !== '';
     }
 
     private const PETUNJUK = [
@@ -26,11 +37,12 @@ final class PerangkatAi
     ];
 
     /** @return array isi dokumen, sudah disamakan dengan kerangka */
-    public static function isi(array $in, string $dok): array
+    public static function isi(array $in, string $dok, ?\App\Models\User $u = null): array
     {
-        if (! self::tersedia()) {
-            throw new RuntimeException('AI belum diaktifkan. Admin perlu mengisi GEMINI_API_KEY di .env.');
+        if (! self::tersedia($u)) {
+            throw new RuntimeException('Belum ada kunci API Gemini. Isi kunci Anda di Perangkat Ajar → Kunci AI, atau minta admin mengisi GEMINI_API_KEY.');
         }
+        $bahan = BahanAjar::bagianAi((array) ($in['bahan'] ?? []));
         $kerangka = Perangkat::kerangka($dok);
         $prompt = implode("\n", [
             'Anda adalah guru SMK berpengalaman di Indonesia yang menyusun perangkat ajar Kurikulum Merdeka dengan pendekatan pembelajaran mendalam (berkesadaran, bermakna, menggembirakan; pengalaman belajar memahami-mengaplikasi-merefleksi).',
@@ -39,7 +51,7 @@ final class PerangkatAi
             'Data pembelajaran:',
             '- Mata pelajaran: '.$in['mapel'],
             '- Konsentrasi keahlian: '.($in['konsentrasi'] ?: '-'),
-            '- Fase / kelas: '.($in['fase'] ?: '-').' / '.$in['kelas'],
+            '- Fase / tingkat: '.($in['fase'] ?: '-').' / '.$in['kelas'],
             '- Topik / materi pokok: '.$in['topik'],
             '- Elemen CP: '.($in['elemen'] ?: '-'),
             '- Tujuan pembelajaran (rancangan guru): '.preg_replace('/\R+/', '; ', (string) $in['tp']),
@@ -52,6 +64,7 @@ final class PerangkatAi
             '- Kesiapan peserta didik: '.($in['kesiapan'] ?: '-'),
             '- Sarana sekolah: '.($in['sarana'] ?: '-'),
             $in['catatan'] ? '- Instruksi tambahan guru: '.$in['catatan'] : '',
+            $bahan ? 'Bahan rujukan dari guru terlampir. Utamakan isi, istilah, dan urutan materi dari bahan itu; jangan menyalin panjang kata demi kata.' : '',
             '',
             'Tugas: '.self::PETUNJUK[$dok],
             $dok === 'modul' ? 'Buat tepat '.max(1, (int) $in['pertemuan']).' butir "pertemuan".' : '',
@@ -60,16 +73,16 @@ final class PerangkatAi
         ]);
 
         $model = (string) config('absensi.ai.model', 'gemini-flash-latest');
-        $res = Http::withHeaders(['x-goog-api-key' => (string) config('absensi.ai.key')])
+        $res = Http::withHeaders(['x-goog-api-key' => self::kunci($u)])
             ->timeout((int) config('absensi.ai.timeout', 50))
             ->post('https://generativelanguage.googleapis.com/v1beta/models/'.rawurlencode($model).':generateContent', [
-                'contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]],
+                'contents' => [['role' => 'user', 'parts' => array_merge($bahan, [['text' => $prompt]])]],
                 'generationConfig' => ['responseMimeType' => 'application/json', 'temperature' => 0.6],
             ]);
         if (! $res->successful()) {
             $pesan = (string) ($res->json('error.message') ?? 'HTTP '.$res->status());
             throw new RuntimeException(match (true) {
-                in_array($res->status(), [401, 403], true) => 'Kunci API Gemini ditolak. Periksa GEMINI_API_KEY.',
+                in_array($res->status(), [401, 403], true) || str_contains($pesan, 'API key') => 'Kunci API Gemini ditolak. Periksa kunci yang dipakai.',
                 $res->status() === 429 => 'Kuota Gemini habis atau terlalu banyak permintaan. Coba lagi beberapa menit lagi.',
                 $res->status() === 404 => 'Model "'.$model.'" tidak ditemukan. Periksa GEMINI_MODEL.',
                 default => 'Gemini gagal menjawab: '.mb_substr($pesan, 0, 200),

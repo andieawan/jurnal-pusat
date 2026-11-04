@@ -13,7 +13,7 @@ class PerangkatAjar extends Model
 
     protected $guarded = [];
 
-    protected $casts = ['user_id' => 'integer', 'subject_id' => 'integer', 'class_id' => 'integer', 'isian' => 'array', 'hasil' => 'array'];
+    protected $casts = ['user_id' => 'integer', 'subject_id' => 'integer', 'class_id' => 'integer', 'dari_id' => 'integer', 'isian' => 'array', 'hasil' => 'array'];
 
     protected static function booted(): void
     {
