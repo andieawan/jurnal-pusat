@@ -1,9 +1,8 @@
 # Jurnal Guru (jurnal-pusat)
 
-Aplikasi Absensi Siswa yang dikembangkan menjadi **Jurnal Guru**: satu halaman **Mengajar** per pertemuan berisi jurnal (materi, kegiatan, catatan, rencana berikutnya) dan absensi mapel. Fitur absensi, nilai, dan integrasi Pusat Sekolah tetap sama.
+Aplikasi kehadiran sekolah, pengganti Absensi Siswa: **Jurnal Guru**, satu halaman **Mengajar** per pertemuan berisi jurnal (materi, kegiatan, catatan, rencana berikutnya) dan absensi mapel. Fitur absensi, nilai, dan integrasi Pusat Sekolah tetap sama.
 
 Pemasangan di VM baru: [`docs/PASANG-VM-JURNAL.md`](docs/PASANG-VM-JURNAL.md).
-Mematikan Absensi setelah Jurnal siap (pindah data + alihkan di Pusat): [`docs/PINDAH-DARI-ABSENSI.md`](docs/PINDAH-DARI-ABSENSI.md).
 
 
 > **Produksi:** urutan lengkap Pusat → aplikasi ada di [runbook Pusat](https://github.com/andieawan/pusat-sekolah/blob/main/docs/PRODUKSI.md). Cek kesiapan server kapan saja: `php artisan absensi:periksa`.

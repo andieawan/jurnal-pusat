@@ -5,7 +5,7 @@ keadaan darurat saat Pusat mati.
 
 | | Nilai |
 |---|---|
-| VM / IP | jurnal-pusat / `192.168.10.26` (lihat dokumen Susunan IP) |
+| VM / IP | jurnal-pusat / `192.168.10.22` (lihat dokumen Susunan IP) |
 | Folder | `/var/www/jurnal` |
 | Database / user | `jurnal_guru` / `jurnal` (password acak, dibuat skrip) |
 | Domain | `jurnal.smkibupakusari.sch.id` |
@@ -28,7 +28,7 @@ menyiapkan Nginx, penjadwal (backup harian 02:00 dan antrean ke Pusat), lalu men
 `admin.sekolah`. Skrip aman diulang: `.env` dan database yang sudah ada tidak diubah. `vendor/` sudah ikut di repo,
 jadi tidak perlu `composer install`.
 
-Lalu di **NPMplus** buat Proxy Host `jurnal.smkibupakusari.sch.id` → `192.168.10.26`, port 80, SSL Let's Encrypt,
+Lalu di **NPMplus** buat Proxy Host `jurnal.smkibupakusari.sch.id` → `192.168.10.22`, port 80, SSL Let's Encrypt,
 **Force SSL**; tambahkan juga DNS-nya bila belum ada.
 
 ## 2. Daftarkan di Pusat (VM Pusat)
@@ -64,8 +64,9 @@ pengampu, dan akun guru tersalin.
 
 ## 4. Akun & peran (di Pusat → Akun)
 
-Selama uji coba, beri akses **Jurnal Guru** (peran `guru`) hanya untuk guru yang ikut mencoba. Pada hari peralihan,
-akses semua guru disalin sekaligus dengan `pusat:alihkan-absensi` — lihat [`PINDAH-DARI-ABSENSI.md`](PINDAH-DARI-ABSENSI.md).
+Beri akses **Jurnal Guru** untuk guru (peran `guru`; juga `kepsek`, `bk`, `tu`, `admin` sesuai tugas), satu per satu atau
+lewat *Buat akun sekaligus* (peran awal guru di Jurnal sudah terisi). Jurnal adalah aplikasi kehadiran sekolah: BK
+membaca dan menulis kehadiran ke Jurnal lewat sambungan "Jurnal Guru → BK" di Pusat → Administrasi → Sambungan.
 
 ## 5. Cek akhir
 
