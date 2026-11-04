@@ -121,6 +121,10 @@ systemctl reload nginx
 
 # ---------------------------------------------------------------- 5. Penjadwal
 # Backup harian (02:00), antrean ke Pusat, dan sinkron otomatis berjalan lewat schedule:run.
+# Bila dulu dipasang lewat "crontab -u www-data -e", baris itu dihapus agar tidak berjalan ganda.
+if crontab -u www-data -l 2>/dev/null | grep -q 'schedule:run'; then
+    crontab -u www-data -l | grep -v 'schedule:run' | crontab -u www-data - || true
+fi
 echo "* * * * * www-data cd $APP_DIR && php artisan schedule:run >> /dev/null 2>&1" > "/etc/cron.d/${NAMA}"
 chmod 644 "/etc/cron.d/${NAMA}"
 systemctl enable --now cron >/dev/null 2>&1 || true
