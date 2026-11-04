@@ -3,11 +3,20 @@ PHPUnit 12.5.38 by Sebastian Bergmann and contributors.
 Runtime:       PHP 8.5.12
 Configuration: /home/runner/work/jurnal-pusat/jurnal-pusat/phpunit.xml
 
-...............................................................  63 / 220 ( 28%)
-............................................................... 126 / 220 ( 57%)
-............................................................... 189 / 220 ( 85%)
-...............................                                 220 / 220 (100%)
+...............................................................  63 / 221 ( 28%)
+............................................................... 126 / 221 ( 57%)
+............................................................... 189 / 221 ( 85%)
+..F.............................                                221 / 221 (100%)
 
-Time: 00:12.155, Memory: 77.00 MB
+Time: 00:16.013, Memory: 79.00 MB
 
-OK (220 tests, 1723 assertions)
+There was 1 failure:
+
+1) Tests\Feature\SemuaHalamanTest::test_semua_halaman_bisa_dibuka_tiap_peran
+tu tidak membuka satu halaman pun
+Failed asserting that 0 is greater than 0.
+
+/home/runner/work/jurnal-pusat/jurnal-pusat/tests/Feature/SemuaHalamanTest.php:105
+
+FAILURES!
+Tests: 221, Assertions: 1729, Failures: 1.
