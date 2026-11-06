@@ -317,6 +317,18 @@ class PusatTest extends TestCase
         $this->post('/login', ['username' => 'g008', 'password' => 'PasswordPusat123'])->assertSessionHasErrors('username');
     }
 
+    public function test_akun_baru_dari_webhook_langsung_bisa_login_cadangan(): void
+    {
+        $this->webhook('akses.diperbarui', ['uuid' => 'a-9', 'username' => 'g009', 'nama' => 'Guru Baru', 'aktif' => true, 'peran' => ['guru'],
+            'password_hash' => password_hash('SandiPusat123', PASSWORD_BCRYPT)])->assertOk();
+        $u = \App\Models\User::where('pusat_uuid', 'a-9')->firstOrFail();
+        $this->assertSame(['Guru Baru', ['guru']], [$u->nama, $u->roles]);
+        $this->post('/login', ['username' => 'g009', 'password' => 'SandiPusat123'])->assertRedirect();
+        $this->assertAuthenticatedAs($u->fresh());
+        $this->webhook('akses.diperbarui', ['uuid' => 'a-10', 'username' => 'g010', 'aktif' => true, 'peran' => [], 'password_hash' => null])->assertOk();
+        $this->assertNull(\App\Models\User::where('pusat_uuid', 'a-10')->first());
+    }
+
     public function test_pusat_mati_kontak_diantrekan_lalu_terkirim_dan_login_pusat_memberi_pesan(): void
     {
         Http::fake(fn () => throw new \Illuminate\Http\Client\ConnectionException('mati'));

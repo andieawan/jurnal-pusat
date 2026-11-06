@@ -66,7 +66,7 @@ if (config('pusat.enabled')) {
     Schedule::call(fn () => \App\Services\PusatAntrean::kirim())->name('pusat-antrean')->everyFiveMinutes()->withoutOverlapping();
 }
 
-// Sinkron otomatis tiap jam — hanya bila PUSAT_SINKRON_OTOMATIS=true (bawaan mati: sinkron lewat tombol Admin).
+// Sinkron otomatis tiap jam (PUSAT_SINKRON_OTOMATIS, bawaan nyala; isi false untuk sinkron lewat tombol Admin saja).
 if (config('pusat.enabled') && config('pusat.sinkron_otomatis')) {
     Schedule::command('pusat:sinkron --terapkan')->hourly()->withoutOverlapping();
 }

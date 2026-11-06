@@ -46,6 +46,7 @@ class PusatWebhookController extends Controller
                 \App\Services\ProfilPusat::tarik();
             } elseif (in_array($event, ['akun.diperbarui', 'akses.diperbarui'], true)) {
                 PusatAkun::cabutBilaPerlu($data);
+                PusatAkun::buatDariPusat($data); // akun baru di Pusat langsung ada di sini
                 PusatAkun::tautPegawai($data);
                 PusatAkun::terapkanSandi($data); // login cadangan
             } elseif (preg_match('/^(siswa|kelas|jurusan|tahun_ajaran|mapel|pengampu)\./', $event)) {

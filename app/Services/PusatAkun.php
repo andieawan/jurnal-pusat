@@ -163,6 +163,23 @@ class PusatAkun
     }
 
     /** Webhook akun: hanya arah AMAN yang diterapkan otomatis (mencabut akses). Perubahan lain menunggu login/sinkron berikutnya. */
+    /**
+     * Webhook akun/akses: akun yang belum ada di sini dibuat langsung (aturan sama dengan login lewat Pusat), agar guru
+     * yang baru dibuat di Pusat bisa memakai login cadangan saat Pusat mati. Akun yang sudah ada diperbarui saat sinkron/login.
+     */
+    public static function buatDariPusat(array $a): void
+    {
+        if (empty($a['aktif']) || empty($a['uuid']) || empty($a['username']) || ! self::petakanPeran((array) ($a['peran'] ?? []))
+            || \App\Models\User::where('pusat_uuid', $a['uuid'])->exists()) {
+            return;
+        }
+        [$u] = self::masuk(['sub' => $a['uuid'], 'username' => $a['username'], 'nama' => $a['nama'] ?? null,
+            'peran' => $a['peran'], 'pegawai' => ['uuid' => $a['pegawai_uuid'] ?? null]]);
+        if ($u) {
+            self::terapkanSandi($a);
+        }
+    }
+
     public static function cabutBilaPerlu(array $data): bool
     {
         $uuid = (string) ($data['uuid'] ?? '');

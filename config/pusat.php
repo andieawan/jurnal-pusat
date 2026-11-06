@@ -16,7 +16,7 @@ return [
     'ca_bundle' => env('PUSAT_CA_BUNDLE'),
 
     // Sinkron data induk: false = hanya lewat tombol Admin → Integrasi Pusat; true = otomatis tiap jam.
-    'sinkron_otomatis' => (bool) env('PUSAT_SINKRON_OTOMATIS', false),
+    'sinkron_otomatis' => (bool) env('PUSAT_SINKRON_OTOMATIS', true),
 
     // Peran di Pusat -> peran lokal Absensi. Peran lain di Pusat (mis. wali_kelas) diabaikan:
     // penugasan wali kelas & pasangan mapel tetap diatur di Absensi.

@@ -33,7 +33,7 @@ Login username/password lama **tetap ada** sebagai cadangan.
 | Peran | Dari Pusat dipetakan: `guru, bk, tu, kepsek, admin, mgmp`. `wali_kelas` dan lainnya diabaikan — wali kelas & pasangan mapel tetap diatur di Jurnal. Peran `superadmin` **tidak pernah** diubah oleh Pusat. Peran diselaraskan tiap login. |
 | Data induk | **Manual** lewat tombol (bawaan). Simulasi dan penerapan memakai logika yang sama; tidak ada data yang dihapus — siswa yang keluar/hilang di Pusat hanya diberi status `keluar`. Pengaman: Pusat kosong atau penonaktifan massal (> 20% / 10 siswa) ditolak kecuali dicentang *tetap terapkan*. |
 | Webhook | Hanya **menandai** "ada perubahan menunggu" di halaman Integrasi Pusat. Satu pengecualian demi keamanan: bila akses akun dicabut di Pusat (nonaktif / tanpa peran), akun lokal langsung dinonaktifkan. |
-| Sinkron otomatis | Opsional: `PUSAT_SINKRON_OTOMATIS=true` (+ cron `schedule:run`) menjalankan `pusat:sinkron --terapkan` tiap jam. |
+| Sinkron otomatis | Bawaan nyala (`PUSAT_SINKRON_OTOMATIS=true`, cron `schedule:run` dipasang install.sh): `pusat:sinkron --terapkan` tiap jam. Akun baru di Pusat juga langsung dibuat lewat webhook, jadi bisa login cadangan saat Pusat mati. |
 | Keluar | Keluar dari Jurnal pada sesi yang masuk lewat Pusat juga keluar dari Pusat. |
 | Tidak disinkron | Mapel, pasangan guru–mapel–kelas, wali kelas, absensi, nilai, jurnal mengajar, perangkat ajar. |
 
