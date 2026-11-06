@@ -10,7 +10,8 @@
 #   APP_URL        alamat publik lengkap (default: http://$DOMAIN, atau http://IP-VM)
 #   PROXY_IP       IP reverse proxy (NPMplus) yang dipercaya (default 192.168.10.10)
 #   DB_NAME/DB_USER  (default jurnal_guru / jurnal)
-#   ADMIN_USER     username admin lokal darurat (default admin.sekolah; password ditanyakan)
+#   ADMIN_USER     (opsional) buat admin lokal darurat dengan username ini; password ditanyakan.
+#                  Bawaan: tidak ada — admin Jurnal mengikuti Pusat (akun Pusat dengan peran admin di Jurnal).
 #   SKIP_DB_INSTALL=1  jangan pasang MariaDB (pakai server MySQL/MariaDB yang sudah ada)
 #
 # Aman diulang: .env, database, dan admin yang sudah ada tidak diubah.
@@ -24,7 +25,7 @@ if [ "$DOMAIN" = "_" ]; then APP_URL="${APP_URL:-http://${IP:-localhost}}"; else
 PROXY_IP="${PROXY_IP:-192.168.10.10}"
 DB_NAME="${DB_NAME:-jurnal_guru}"
 DB_USER="${DB_USER:-jurnal}"
-ADMIN_USER="${ADMIN_USER:-admin.sekolah}"
+ADMIN_USER="${ADMIN_USER:-}"
 SKIP_DB_INSTALL="${SKIP_DB_INSTALL:-0}"
 
 info() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
@@ -129,8 +130,9 @@ echo "* * * * * www-data cd $APP_DIR && php artisan schedule:run >> /dev/null 2>
 chmod 644 "/etc/cron.d/${NAMA}"
 systemctl enable --now cron >/dev/null 2>&1 || true
 
-# ---------------------------------------------------------------- 6. Admin lokal darurat
-if [ "$NEW_INSTALL" = "1" ]; then
+# ---------------------------------------------------------------- 6. Admin lokal darurat (opsional)
+# Admin Jurnal = akun Pusat yang diberi peran admin di Jurnal. Admin lokal hanya bila ADMIN_USER diisi.
+if [ "$NEW_INSTALL" = "1" ] && [ -n "$ADMIN_USER" ]; then
     if [ -t 0 ]; then
         info "Membuat admin lokal '$ADMIN_USER' (untuk keadaan darurat bila Pusat mati)"
         artisan absensi:admin "$ADMIN_USER" || echo "Admin belum dibuat; ulangi nanti: sudo -u www-data php artisan absensi:admin $ADMIN_USER"
@@ -159,6 +161,7 @@ cat <<LANJUT
    2. Di VM Pusat: sudo -u www-data php artisan pusat:aplikasi-baru ${NAMA} --base-url=${APP_URL}
       lalu isi PUSAT_ENABLED=true, PUSAT_URL, PUSAT_CLIENT_ID, PUSAT_CLIENT_SECRET, PUSAT_WEBHOOK_SECRET di .env
    3. sudo -u www-data php artisan config:clear && sudo -u www-data php artisan absensi:periksa
-   4. Masuk sebagai ${ADMIN_USER} -> Admin -> Integrasi Pusat -> Uji koneksi -> Sinkron sekarang
+   4. sudo -u www-data php artisan pusat:sinkron --terapkan   (kelas, siswa, mapel, pengampu, akun dari Pusat)
+   5. Di Pusat beri akun Anda peran admin di Jurnal Guru, lalu buka Jurnal -> Masuk lewat Pusat
    Memperbarui nanti: cd ${APP_DIR} && sudo bash deploy/update.sh
 LANJUT

@@ -101,8 +101,9 @@ sudo find storage bootstrap/cache -type d -exec chmod g+s {} \;
 ## 7. Buat tabel & akun Administrator
 ```bash
 php artisan migrate --force
-php artisan absensi:admin admin.sekolah      # password ditanya (min. 10 karakter)
+php artisan absensi:admin admin.sekolah      # hanya bila TIDAK memakai Pusat (atau admin darurat); password ditanya
 ```
+Bila memakai Pusat, admin Jurnal = akun Pusat dengan peran admin di Jurnal (lihat `docs/PASANG-VM-JURNAL.md`).
 Opsional — isi **data contoh** untuk mencoba: `php artisan db:seed --class=DemoSeeder`.
 
 ## 8. Nginx

@@ -24,8 +24,8 @@ sudo DOMAIN=jurnal.smkibupakusari.sch.id APP_URL=https://jurnal.smkibupakusari.s
 ```
 
 Skrip ini memasang paket (Nginx, PHP, MariaDB, cron), membuat database dengan password acak, menulis `.env`,
-menyiapkan Nginx, penjadwal (backup harian 02:00 dan antrean ke Pusat), lalu menanyakan password untuk admin lokal
-`admin.sekolah`. Skrip aman diulang: `.env` dan database yang sudah ada tidak diubah. `vendor/` sudah ikut di repo,
+dan menyiapkan Nginx serta penjadwal (backup harian 02:00 dan antrean ke Pusat). Tidak ada admin lokal yang dibuat:
+admin Jurnal mengikuti Pusat (lihat langkah 3). Skrip aman diulang: `.env` dan database yang sudah ada tidak diubah. `vendor/` sudah ikut di repo,
 jadi tidak perlu `composer install`.
 
 Lalu di **NPMplus** buat Proxy Host `jurnal.smkibupakusari.sch.id` → `192.168.10.22`, port 80, SSL Let's Encrypt,
@@ -59,8 +59,13 @@ sudo -u www-data php artisan config:clear
 sudo -u www-data php artisan absensi:periksa      # semua baris harus [OK]
 ```
 
-Masuk sebagai `admin.sekolah` → **Admin → Integrasi Pusat** → *Uji koneksi* → *Sinkron sekarang*. Kelas, siswa, mapel,
-pengampu, dan akun guru tersalin.
+```bash
+sudo -u www-data php artisan pusat:sinkron --terapkan   # kelas, siswa, mapel, pengampu, dan akun guru tersalin
+```
+
+Di **Pusat → Akun**, beri akun Anda peran `admin` di **Jurnal Guru**, lalu buka Jurnal → **Masuk lewat Pusat**. Admin
+Jurnal selalu akun Pusat; tidak ada admin lokal. Hanya bila perlu akses darurat saat Pusat mati:
+`sudo -u www-data php artisan absensi:admin <username>` (password ditanya).
 
 ## 4. Akun & peran (di Pusat → Akun)
 
