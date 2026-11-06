@@ -8,6 +8,6 @@ Configuration: /home/runner/work/jurnal-pusat/jurnal-pusat/phpunit.xml
 ............................................................... 189 / 232 ( 81%)
 ...........................................                     232 / 232 (100%)
 
-Time: 00:16.327, Memory: 83.00 MB
+Time: 00:10.367, Memory: 83.00 MB
 
-OK (232 tests, 1946 assertions)
+OK (232 tests, 1945 assertions)
