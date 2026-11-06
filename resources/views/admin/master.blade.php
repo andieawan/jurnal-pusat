@@ -52,7 +52,7 @@
                     <li style="padding:6px 0;border-bottom:1px solid var(--line)">{{ $s->name }}
                         @if($s->kode)<small class="mut">{{ $s->kode }}</small>@endif
                         @if($s->aktif === false)<span class="badge">nonaktif</span>@endif
-                        @if(! $s->pusat_uuid && (int) $s->id !== (int) config('absensi.bk_subject_id'))<span class="badge" title="Belum ada di Pusat">hanya di Absensi</span>@endif
+                        @if(! $s->pusat_uuid && (int) $s->id !== (int) config('absensi.bk_subject_id'))<span class="badge" title="Belum ada di Pusat">hanya di Jurnal</span>@endif
                     </li>
                 @endforeach
             </ul>

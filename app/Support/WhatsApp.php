@@ -81,24 +81,4 @@ class WhatsApp
             .($portalUrl ? "\n\nRiwayat kehadiran lengkap dapat dilihat di: ".$portalUrl : '')
             .self::penutup($sender);
     }
-
-    /** Pesan panggilan/tindak lanjut BK. */
-    public static function bkMessage(Student $s, string $perihal, ?string $sender): string
-    {
-        return self::sapaan($s)."\n\nKami dari Bimbingan Konseling ingin menyampaikan hal berikut terkait ananda:\n*".$perihal."*\n\nMohon Bapak/Ibu dapat menghubungi kami atau hadir ke sekolah untuk berkoordinasi."
-            .self::penutup($sender);
-    }
-
-    /** Pesan dari satu catatan BK (detail kasus rahasia tidak ikut dikirim). */
-    public static function recordMessage(\App\Models\BkRecord $r, ?string $sender): string
-    {
-        $s = $r->student;
-        if ($r->jenis === 'prestasi') {
-            return self::sapaan($s)."\n\nAlhamdulillah, kami turut bangga menyampaikan bahwa ananda meraih prestasi:\n*".$r->judul.'*'
-                .($r->x('peringkat') ? ' — '.$r->x('peringkat') : '').($r->kategori ? ' (tingkat '.$r->kategori.')' : '')
-                ."\n\nSemoga menjadi motivasi untuk terus berprestasi.".self::penutup($sender);
-        }
-
-        return self::bkMessage($s, $r->rahasia ? 'Tindak lanjut layanan bimbingan konseling' : $r->judul, $sender);
-    }
 }

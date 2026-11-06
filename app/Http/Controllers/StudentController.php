@@ -50,13 +50,10 @@ class StudentController extends Controller
                 'grades' => $myGrades->filter(fn ($g) => isset($acts[$g->activity_id]))
                     ->sortByDesc(fn ($g) => $acts[$g->activity_id]->tanggal_kegiatan),
                 'canParent' => AccessService::canManageParentAccess($u, $student),
-                'canLetter' => $u->hasRole('admin', 'superadmin', 'bk', 'kepsek') || $u->isWaliOf($student->class_id),
+                'canContact' => $u->hasRole('admin', 'superadmin', 'bk', 'kepsek') || $u->isWaliOf($student->class_id),
                 'canOverride' => $u->hasRole('admin', 'superadmin', 'kepsek'),
                 'tokens' => ParentToken::where('student_id', $student->id)->orderByDesc('created_at')->get(),
                 'newToken' => session('new_token'),
-                'bkRecords' => \App\Services\BkService::canOpen($u) && \App\Support\DbUpdate::bkReady()
-                    ? \App\Services\BkService::visible($u)->where('student_id', $student->id)->orderByDesc('tanggal')->orderByDesc('id')->limit(30)->get()
-                    : null,
             ];
         }
 

@@ -2,7 +2,7 @@
 @section('content')
 @include('admin._tabs')
 @if(\App\Services\PusatKlien::kelolaSiswa())
-@include('admin._induk', ['apa' => 'Kenaikan kelas dan tahun ajaran', 'path' => '/admin/kenaikan', 'ket' => 'Lakukan kenaikan kelas, kelulusan, dan pergantian tahun ajaran di Pusat → Kenaikan Kelas. Hasilnya tersalin otomatis ke Absensi (riwayat absensi & nilai tidak hilang).'])
+@include('admin._induk', ['apa' => 'Kenaikan kelas dan tahun ajaran', 'path' => '/admin/kenaikan', 'ket' => 'Lakukan kenaikan kelas, kelulusan, dan pergantian tahun ajaran di Pusat → Kenaikan Kelas. Hasilnya tersalin otomatis ke Jurnal (riwayat absensi & nilai tidak hilang).'])
 @else
 
 <div class="alert alert-info"><span class="alert-ic" aria-hidden="true">i</span><span class="alert-txt">

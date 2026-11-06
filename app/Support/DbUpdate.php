@@ -29,36 +29,10 @@ class DbUpdate
         }
     }
 
-    /** Modul BK siap dipakai (tabel sudah dibuat).  */
-    public static function bkReady(): bool
-    {
-        return \Illuminate\Support\Facades\Schema::hasTable('bk_records');
-    }
-
     /** Kolom kontak orang tua sudah ada di tabel siswa. */
     public static function parentContactReady(): bool
     {
         return \Illuminate\Support\Facades\Schema::hasColumn('students', 'telp_ortu');
-    }
-
-    /** Modul TU (mutasi, register surat, absensi guru) siap dipakai. */
-    public static function tuReady(): bool
-    {
-        $s = \Illuminate\Support\Facades\Schema::class;
-
-        return $s::hasTable('tu_surat') && $s::hasTable('mutasi_siswa') && $s::hasTable('staff_attendance');
-    }
-
-    /** Absen mandiri guru & staf siap (kolom jam & pengaturan sudah ada). */
-    public static function selfReady(): bool
-    {
-        static $ok = null;
-        if ($ok === null || app()->runningUnitTests()) {
-            $s = \Illuminate\Support\Facades\Schema::class;
-            $ok = $s::hasColumn('staff_attendance', 'jam_masuk') && $s::hasColumn('school_settings', 'staff_mandiri');
-        }
-
-        return $ok;
     }
 
     /** Tautan info kehadiran kelas untuk wali murid siap dipakai. */

@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\InstallController;
 use App\Models\User;
+use App\Services\AdminService;
 use App\Services\BackupService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -27,25 +27,15 @@ Artisan::command('absensi:admin {username} {--nama=Administrator}', function (st
         return 1;
     }
     config(['absensi.admin.nama' => $this->option('nama')]);
-    InstallController::createAdmin($username, $pw);
+    AdminService::createAdmin($username, $pw);
     $this->info("Akun Administrator $username dibuat.");
 })->purpose('Buat akun Administrator (superadmin)');
 
 // Backup harian — aktif bila cron menjalankan "php artisan schedule:run" tiap menit.
 Schedule::command('absensi:backup')->dailyAt('02:00')->timezone(config('absensi.timezone'));
 
-// ---- Penyambungan ke Pusat Sekolah (lihat docs/PUSAT.md) ----
-Artisan::command('pusat:ekspor {dir? : Folder tujuan (bawaan storage/app/private/pusat-ekspor)}', function (?string $dir = null) {
-    $dir ??= storage_path('app/private/pusat-ekspor');
-    $hasil = \App\Services\PusatEkspor::tulis($dir);
-    foreach ($hasil as $berkas) {
-        foreach ($berkas as $nama => $n) {
-            $this->line(sprintf('%-14s %d baris', $nama, $n));
-        }
-    }
-    $this->info("Berkas ada di: $dir (berisi data pribadi siswa — hapus setelah diimpor).");
-})->purpose('Ekspor guru, kelas, siswa, dan akun ke CSV format impor Pusat');
 
+// ---- Penyambungan ke Pusat Sekolah (lihat docs/PUSAT.md) ----
 Artisan::command('pusat:sinkron {--terapkan : Tulis perubahan (tanpa ini hanya simulasi)} {--paksa : Izinkan penonaktifan siswa dalam jumlah besar}', function () {
     if (! \App\Services\PusatKlien::aktif() || ! \App\Services\PusatKlien::siap()) {
         $this->error('Integrasi Pusat belum aktif (cek .env) atau migrasi belum dijalankan.');

@@ -44,7 +44,7 @@ class V1TulisController extends Controller
         ]);
         $s = ! empty($d['siswa_uuid']) ? Student::where('pusat_uuid', $d['siswa_uuid'])->first() : (! empty($d['siswa_id']) ? Student::find($d['siswa_id']) : null);
         if (! $s) {
-            return AuthenticateApiKey::error('not_found', 'Siswa tidak ditemukan di Absensi (sudah sinkron dari Pusat?).', 404);
+            return AuthenticateApiKey::error('not_found', 'Siswa tidak ditemukan di Jurnal (sudah sinkron dari Pusat?).', 404);
         }
         try {
             if (! Dates::valid($d['tanggal']) || Dates::isFuture($d['tanggal'])) {
@@ -73,7 +73,7 @@ class V1TulisController extends Controller
         }
         $k = V1Controller::cariKelas($r);
         if (! $k) {
-            return AuthenticateApiKey::error('not_found', 'Kelas tidak ditemukan di Absensi (sudah sinkron dari Pusat?).', 404);
+            return AuthenticateApiKey::error('not_found', 'Kelas tidak ditemukan di Jurnal (sudah sinkron dari Pusat?).', 404);
         }
         $ada = \App\Models\Attendance::where('class_id', $k->id)->where('tanggal', $tanggal)->whereNull('subject_id')->get()->keyBy('student_id');
         $data = Student::where('class_id', $k->id)->where('status', 'aktif')->orderBy('nama')->get()->map(fn ($s) => [
@@ -94,7 +94,7 @@ class V1TulisController extends Controller
         ]);
         $k = V1Controller::cariKelas($r);
         if (! $k) {
-            return AuthenticateApiKey::error('not_found', 'Kelas tidak ditemukan di Absensi (sudah sinkron dari Pusat?).', 404);
+            return AuthenticateApiKey::error('not_found', 'Kelas tidak ditemukan di Jurnal (sudah sinkron dari Pusat?).', 404);
         }
         $siswa = Student::where('class_id', $k->id)->where('status', 'aktif')->get();
         $perUuid = $siswa->keyBy('pusat_uuid');
@@ -107,7 +107,7 @@ class V1TulisController extends Controller
             foreach ($d['entri'] as $e) {
                 $s = ! empty($e['siswa_uuid']) ? ($perUuid[$e['siswa_uuid']] ?? null) : (! empty($e['siswa_id']) ? ($perId[(int) $e['siswa_id']] ?? null) : null);
                 if (! $s) {
-                    throw new UserError('Ada siswa yang bukan siswa aktif kelas '.$k->name.' di Absensi. Muat ulang halaman lalu coba lagi.');
+                    throw new UserError('Ada siswa yang bukan siswa aktif kelas '.$k->name.' di Jurnal. Muat ulang halaman lalu coba lagi.');
                 }
                 $entries[$s->id] = ['student_id' => $s->id, 'status' => $e['status'], 'notes' => $e['catatan'] ?? ''];
             }

@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Http\Controllers\InstallController;
+use App\Services\AdminService;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
 
             return;
         }
-        InstallController::createAdmin($u, $p);
+        AdminService::createAdmin($u, $p);
         $this->command?->info("Akun Administrator \"$u\" dibuat. Hapus ADMIN_PASSWORD dari .env setelah login pertama.");
     }
 }

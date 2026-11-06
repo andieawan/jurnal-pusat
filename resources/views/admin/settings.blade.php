@@ -86,29 +86,6 @@
             <small class="mut" style="display:block;margin-top:6px">Gabungan = alpa + izin + sakit, untuk siswa yang tidak mencapai ambang per jenis. Bawaan: 2 / 2 / 2 / 3. Perubahan langsung berlaku untuk semua data.</small>
         </fieldset>
         @endif
-        @php
-            $tuTerpisah = config('absensi.tu_url') || in_array('tu', collect((array) session('aplikasi_lain', []))->pluck('kode')->all(), true);
-        @endphp
-        @if($tuTerpisah)
-        <p class="hint" style="margin-top:16px">Absen mandiri guru &amp; staf diatur di <b>aplikasi TU</b>.</p>
-        @endif
-        @if(\App\Support\DbUpdate::selfReady() && ! $tuTerpisah)
-        @php
-            $sc = \App\Services\StaffService::config();
-        @endphp
-        <fieldset class="fs" style="margin:16px 0 0;border:1px solid var(--line);border-radius:10px;padding:12px"><legend style="padding:0 6px;font-weight:700">Absen Mandiri Guru &amp; Staf</legend>
-            <input type="hidden" name="staff_form" value="1">
-            <label class="chk"><input type="checkbox" name="staff_mandiri" value="1" @checked(old('staff_form') ? old('staff_mandiri') : $sc['aktif'])> Aktifkan absen mandiri (guru &amp; staf absen sendiri dari HP)</label>
-            <div class="fields" style="margin-top:10px">
-                <div><label for="sj">Batas jam masuk</label><input id="sj" type="time" name="staff_jam_masuk" value="{{ old('staff_jam_masuk', $sc['batas']) }}"></div>
-                <div><label for="sr">Radius dari sekolah (meter)</label><input id="sr" type="number" name="staff_radius" min="0" max="5000" value="{{ old('staff_radius', $sc['radius'] ?: '') }}" placeholder="kosong = tanpa cek lokasi"></div>
-                <div><label for="sla">Lintang (latitude)</label><input id="sla" type="text" inputmode="decimal" name="staff_lat" value="{{ old('staff_lat', $sc['lat']) }}" placeholder="-8.1234567"></div>
-                <div><label for="sln">Bujur (longitude)</label><input id="sln" type="text" inputmode="decimal" name="staff_lng" value="{{ old('staff_lng', $sc['lng']) }}" placeholder="113.1234567"></div>
-            </div>
-            <button type="button" class="btn btn-sm" style="margin-top:8px" data-geo-fill="#sla,#sln">📍 Pakai lokasi saya sekarang</button>
-            <small class="mut" style="display:block;margin-top:6px">Buka halaman ini <b>saat berada di sekolah</b> lalu klik tombol di atas. Pengecekan lokasi memerlukan alamat <b>https://</b> dan izin lokasi di HP. Kosongkan radius bila tidak ingin memeriksa lokasi.</small>
-        </fieldset>
-        @endif
         <button class="btn btn-pri" style="margin-top:12px">Simpan Pengaturan</button>
     </form>
     <div class="card"><h2>Backup Database</h2>

@@ -39,12 +39,4 @@ class TahunAjaran
 
         return ($semester ?? self::semester()) === 'Genap' ? ["$b-01-01", "$b-06-30"] : ["$a-07-01", "$a-12-31"];
     }
-
-    /** @return array{0:string,1:string} */
-    public static function yearRange(?string $label = null): array
-    {
-        [$a, $b] = self::years($label);
-
-        return ["$a-07-01", "$b-06-30"];
-    }
 }

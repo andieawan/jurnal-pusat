@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Attendance;
-use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 /** Perbaikan hasil audit kode (Okt 2026). */
@@ -37,13 +36,6 @@ class AuditFixesTest extends TestCase
         $this->actingAs($this->wali)->post('/siswa/5/pengesahan')->assertSessionHas('error', fn ($m) => str_contains($m, 'hanya oleh Wali Kelas'));
         // wali kelas 1 untuk siswanya sendiri: lolos cek peran (hasil ditentukan kehadiran, bukan peran)
         $this->actingAs($this->wali)->post('/siswa/1/pengesahan')->assertSessionHas('success', fn ($m) => str_contains($m, 'DISETUJUI'));
-    }
-
-    public function test_upload_rejects_non_image_non_pdf(): void
-    {
-        $f = UploadedFile::fake()->create('x.php', 10, 'text/x-php');
-        $this->actingAs($this->admin)->post('/tu/surat/masuk', ['berkas' => $f, 'perihal' => 'a', 'pihak' => 'x', 'tanggal' => date('Y-m-d')])
-            ->assertSessionHasErrors('berkas');
     }
 
     public function test_csp_header_is_sent(): void

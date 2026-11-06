@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Pasangan Mapel mengikuti Pengampu Mapel di Pusat (guru – mapel – kelas).
- * Pusat menyebut guru lewat UUID pegawai; baris yang gurunya belum punya akun di Absensi disimpan dan
+ * Pusat menyebut guru lewat UUID pegawai; baris yang gurunya belum punya akun di Jurnal disimpan dan
  * dipasang otomatis saat guru itu pertama kali masuk lewat Pusat. Pasangan buatan lokal tidak disentuh.
  */
 final class PusatPengampu
@@ -23,7 +23,7 @@ final class PusatPengampu
         return $ada ??= Schema::hasColumn('teacher_subject_class_pairing', 'pusat_uuid') && Schema::hasColumn('users', 'pegawai_uuid');
     }
 
-    /** Pasangan Mapel sudah diambil dari Pusat → tambah/hapus pasangan dari Pusat dikunci di Absensi. */
+    /** Pasangan Mapel sudah diambil dari Pusat → tambah/hapus pasangan dari Pusat dikunci di Jurnal. */
     public static function aktif(): bool
     {
         return PusatKlien::kelolaSiswa() && (bool) PusatKlien::baca('pengampu_pusat');

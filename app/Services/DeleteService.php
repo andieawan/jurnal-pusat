@@ -39,15 +39,6 @@ class DeleteService
         $count = fn (string $table) => DB::table($table)->whereIn('student_id', $ids)->select('student_id', DB::raw('count(*) as n'))->groupBy('student_id')->pluck('n', 'student_id');
         $add('data presensi', $count('attendance'));
         $add('nilai', $count('grade_values'));
-        if (DbUpdate::bkReady()) {
-            $add('catatan BK', $count('bk_records'));
-        }
-        if (self::has('mutasi_siswa')) {
-            $add('data mutasi', $count('mutasi_siswa'));
-        }
-        if (self::has('tu_surat')) {
-            $add('surat', DB::table('tu_surat')->whereIn('student_id', $ids)->select('student_id', DB::raw('count(*) as n'))->groupBy('student_id')->pluck('n', 'student_id'));
-        }
 
         return $out;
     }
@@ -112,9 +103,6 @@ class DeleteService
             if (($n = DB::table($t)->where('class_id', $c->id)->count()) > 0) {
                 $why[] = "$n $label";
             }
-        }
-        if (DbUpdate::bkReady() && ($n = DB::table('bk_records')->where('class_id', $c->id)->count()) > 0) {
-            $why[] = "$n catatan BK";
         }
         if ($why) {
             throw new UserError("Kelas {$c->name} tidak dapat dihapus: masih punya ".implode(', ', $why).'.');
@@ -181,18 +169,6 @@ class DeleteService
         }
         $why = [];
         $chk = [['attendance', 'recorded_by', 'data presensi'], ['grade_activities', 'teacher_id', 'penilaian']];
-        if (DbUpdate::bkReady()) {
-            $chk[] = ['bk_records', 'dicatat_oleh', 'catatan BK'];
-        }
-        if (self::has('mutasi_siswa')) {
-            $chk[] = ['mutasi_siswa', 'dicatat_oleh', 'data mutasi'];
-        }
-        if (self::has('tu_surat')) {
-            $chk[] = ['tu_surat', 'dicatat_oleh', 'surat'];
-        }
-        if (self::has('staff_attendance')) {
-            $chk[] = ['staff_attendance', 'user_id', 'absensi guru/staf'];
-        }
         foreach ($chk as [$t, $col, $label]) {
             if (($n = DB::table($t)->where($col, $u->id)->count()) > 0) {
                 $why[] = "$n $label";

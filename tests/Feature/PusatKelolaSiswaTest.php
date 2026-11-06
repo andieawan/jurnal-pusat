@@ -6,7 +6,6 @@ use App\Exceptions\UserError;
 use App\Models\Student;
 use App\Services\AdminService;
 use App\Services\DeleteService;
-use App\Services\TuService;
 use Tests\TestCase;
 
 /** Bila tersambung ke Pusat, data induk siswa tidak boleh diubah lokal (agar semua aplikasi sama & tidak tertimpa sinkron). */
@@ -37,7 +36,6 @@ class PusatKelolaSiswaTest extends TestCase
         $this->gagal(fn () => AdminService::saveStudent($this->admin, null, ['nis' => 'X1', 'nama' => 'Baru', 'jk' => 'L', 'class_id' => 1, 'status' => 'aktif']), 'dikelola Pusat');
         $this->gagal(fn () => AdminService::importStudents($this->admin, ['nis', 'nama siswa', 'jk', 'kelas'], [['X2', 'Baru', 'L', 'X RPL 1']]), 'dikelola Pusat');
         $this->gagal(fn () => AdminService::saveStudent($this->admin, $this->s, ['nama' => $this->s->nama, 'jk' => $this->s->jk, 'class_id' => 2, 'status' => 'aktif']), 'dikelola Pusat');
-        $this->gagal(fn () => TuService::mutasiKeluar($this->admin, ['student_id' => 1, 'status' => 'pindah', 'tanggal' => $this->daysAgo(0), 'sekolah' => 'SMK Lain']), 'aplikasi TU');
         $r = DeleteService::deleteStudents($this->admin, [1]);
         $this->assertSame(0, $r['deleted']);
         $this->assertStringContainsString('Pusat', $r['skipped'][0]);

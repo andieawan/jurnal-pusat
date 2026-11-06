@@ -3,27 +3,18 @@
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BkController;
-use App\Http\Controllers\BkRecordController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\RecapController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\GradeController;
-use App\Http\Controllers\InstallController;
 use App\Http\Controllers\LetterController;
 use App\Http\Controllers\PublicController;
-use App\Http\Controllers\SelfCheckController;
 use App\Http\Controllers\StudentController;
-use App\Http\Controllers\Tu;
 use Illuminate\Support\Facades\Route;
 
 // ---- PWA (manifest aplikasi yang bisa dipasang di HP) ----
 Route::get('/manifest.webmanifest', [\App\Http\Controllers\PwaController::class, 'manifest'])->name('manifest');
-
-// ---- Instalasi pertama (hanya aktif selama belum ada akun) ----
-Route::get('/pasang', [InstallController::class, 'show'])->name('install');
-Route::post('/pasang', [InstallController::class, 'run'])->middleware('throttle:5,1');
 
 // ---- Publik (tanpa login, divalidasi token) ----
 Route::middleware('throttle:publik')->group(function () {
@@ -92,71 +83,14 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/siswa/{student}/akses-wali', [StudentController::class, 'parentCreate'])->name('students.parent.create');
     Route::post('/siswa/akses-wali/{token}/cabut', [StudentController::class, 'parentRevoke'])->name('students.parent.revoke');
 
-    Route::middleware(['bk.alih', 'can:bk'])->group(function () {
-        Route::get('/bk/presensi', [BkController::class, 'index'])->name('bk');
-        Route::post('/bk/presensi', [BkController::class, 'store'])->name('bk.store');
-        Route::post('/bk/delegasi', [BkController::class, 'delegate'])->name('bk.delegate');
-        Route::post('/bk/delegasi/{token}/cabut', [BkController::class, 'revoke'])->name('bk.revoke');
-    });
-    // Modul BK terpadu (Wali Kelas & Kepsek ikut melihat sesuai hak akses)
-    Route::middleware(['bk.alih', 'can:bk-modul'])->group(function () {
-        Route::get('/bk', [BkRecordController::class, 'home'])->name('bk.home');
-        Route::get('/bk/catatan/{jenis}', [BkRecordController::class, 'index'])->name('bk.records');
-        Route::post('/bk/catatan/{jenis}', [BkRecordController::class, 'store'])->name('bk.records.store');
-        Route::put('/bk/catatan/{jenis}/{record}', [BkRecordController::class, 'update'])->name('bk.records.update');
-        Route::delete('/bk/catatan/{jenis}/{record}', [BkRecordController::class, 'destroy'])->name('bk.records.destroy');
-        Route::get('/bk/catatan/{jenis}/{record}/berkas', [BkRecordController::class, 'file'])->name('bk.records.file');
-    });
-
-    Route::middleware(['tu.alih', 'can:absen-mandiri'])->group(function () {
-        Route::get('/absen-saya', [SelfCheckController::class, 'index'])->name('selfcheck');
-        Route::post('/absen-saya', [SelfCheckController::class, 'store'])->name('selfcheck.store');
-    });
-
     Route::get('/pantau', MonitorController::class)->middleware('can:lihat-sekolah')->name('monitor');
     Route::get('/rekap', [RecapController::class, 'index'])->name('recap');
     Route::get('/rekap/unduh', [RecapController::class, 'export'])->name('recap.export');
 
-    Route::get('/surat/peringatan/{student}', [LetterController::class, 'warning'])->middleware('bk.alih')->name('letters.warning');
-    Route::get('/surat/panggilan/{student}', [LetterController::class, 'summons'])->middleware('bk.alih')->name('letters.summons');
-    Route::get('/surat/{jenis}/{student}', [LetterController::class, 'form'])->whereIn('jenis', ['teguran', 'pernyataan-berhenti', 'pernyataan-mundur', 'berita-acara', 'izin'])->middleware('bk.alih')->name('letters.form');
     Route::get('/surat/laporan', [LetterController::class, 'report'])->name('letters.report');
 
     Route::get('/unduh/absensi', [ExportController::class, 'attendance'])->name('export.attendance');
     Route::get('/unduh/nilai', [ExportController::class, 'grades'])->name('export.grades');
-    Route::get('/unduh/bk', [ExportController::class, 'bk'])->middleware('can:bk')->name('export.bk');
-
-    // ---- Tata Usaha (TU): lihat = TU/Kepsek/Admin, ubah = TU/Admin ----
-    Route::prefix('tu')->name('tu.')->middleware('tu.alih')->group(function () {
-        Route::middleware('can:tu-lihat')->group(function () {
-            Route::get('/', Tu\HomeController::class)->name('home');
-            Route::get('/mutasi', [Tu\MutasiController::class, 'index'])->name('mutasi');
-            Route::get('/surat/{arah}', [Tu\SuratController::class, 'index'])->whereIn('arah', ['masuk', 'keluar'])->name('surat');
-            Route::get('/surat/{surat}/berkas', [Tu\SuratController::class, 'file'])->name('surat.file');
-            Route::get('/surat/{surat}/cetak', [Tu\SuratController::class, 'print'])->name('surat.print');
-            Route::get('/absen-guru', [Tu\StaffController::class, 'index'])->name('staff');
-            Route::get('/absen-guru/rekap', [Tu\StaffController::class, 'recap'])->name('staff.recap');
-            Route::get('/absen-guru/rekap/unduh', [Tu\StaffController::class, 'export'])->name('staff.export');
-            Route::get('/cetak', [Tu\PrintController::class, 'index'])->name('print');
-            Route::get('/cetak/daftar-hadir', [Tu\PrintController::class, 'sheet'])->name('print.sheet');
-            Route::get('/cetak/daftar-siswa', [Tu\PrintController::class, 'list'])->name('print.list');
-            Route::get('/cetak/kartu', [Tu\PrintController::class, 'cards'])->name('print.cards');
-        });
-        Route::middleware('can:tu')->group(function () {
-            // Data siswa memakai pengendali yang sama dengan Admin Panel (tampilan menyesuaikan)
-            Route::get('/siswa', [Admin\StudentController::class, 'index'])->name('students');
-            Route::post('/siswa', [Admin\StudentController::class, 'store'])->name('students.store');
-            Route::put('/siswa/{student}', [Admin\StudentController::class, 'update'])->name('students.update');
-            Route::post('/siswa/impor', [Admin\StudentController::class, 'import'])->name('students.import');
-            Route::post('/mutasi/masuk', [Tu\MutasiController::class, 'masuk'])->name('mutasi.masuk');
-            Route::post('/mutasi/keluar', [Tu\MutasiController::class, 'keluar'])->name('mutasi.keluar');
-            Route::post('/surat-keterangan', [Tu\SuratController::class, 'keterangan'])->name('keterangan');
-            Route::post('/surat/{arah}', [Tu\SuratController::class, 'store'])->whereIn('arah', ['masuk', 'keluar'])->name('surat.store');
-            Route::put('/surat/{surat}', [Tu\SuratController::class, 'update'])->name('surat.update');
-            Route::delete('/surat/{surat}', [Tu\SuratController::class, 'destroy'])->name('surat.destroy');
-            Route::post('/absen-guru', [Tu\StaffController::class, 'store'])->name('staff.store');
-        });
-    });
 
     // ---- Admin Panel ----
     Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function () {

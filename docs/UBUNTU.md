@@ -12,7 +12,7 @@ user biasa yang punya `sudo` (bukan langsung `root`). Ganti `jurnal.smkibupakusa
 |---|---|
 | Server | Ubuntu 22.04/24.04, RAM ≥ 1 GB, akses SSH + `sudo` |
 | Alamat | **Domain** (mis. `jurnal.smkibupakusari.sch.id` → IP server) *atau* hanya IP lokal (lihat langkah 9) |
-| HTTPS | Disarankan. **Wajib** untuk Absen Saya berbasis lokasi (GPS) dan untuk memasang aplikasi ke HP (PWA) |
+| HTTPS | Disarankan. **Wajib** untuk memasang aplikasi ke HP (PWA) |
 
 ## 1. Perbarui sistem & firewall
 ```bash
@@ -127,7 +127,7 @@ Perpanjangan otomatis sudah diatur certbot (cek: `sudo certbot renew --dry-run`)
 `cloudflared`, arahkan hostname ke `http://localhost:80`. Lalu di `.env` isi `TRUST_PROXIES=true`.
 
 **C. Hanya jaringan lokal (IP / nama internal), tanpa HTTPS.** Di `.env` ubah `SESSION_SECURE_COOKIE=false` dan
-`APP_URL=http://IP-SERVER`. Konsekuensinya: **tombol lokasi (GPS) di Absen Saya dan pemasangan ke layar HP (PWA) tidak
+`APP_URL=http://IP-SERVER`. Konsekuensinya: **pemasangan ke layar HP (PWA) tidak
 berfungsi** — selebihnya normal. Untuk HTTPS lokal, gunakan A/B atau sertifikat dari CA internal sekolah.
 
 Setelah mengubah `.env`: `php artisan optimize:clear`.
@@ -153,7 +153,7 @@ sudo crontab -u www-data -e
 ```cron
 30 2 * * * rsync -az --delete /var/www/jurnal/storage/app/backups/ user@IP-VPS:/backup/jurnal/ >> /dev/null 2>&1
 ```
-Ikut cadangkan juga `.env` dan folder `storage/app/private` (scan surat BK/TU): `rsync -az /var/www/jurnal/.env /var/www/jurnal/storage/app/private user@IP-VPS:/backup/jurnal-files/`.
+Ikut cadangkan juga `.env` dan folder `storage/app/private` (berkas unggahan: hardcopy absensi, bahan ajar): `rsync -az /var/www/jurnal/.env /var/www/jurnal/storage/app/private user@IP-VPS:/backup/jurnal-files/`.
 
 ## 12. Cek akhir
 - [ ] Halaman login terbuka lewat HTTPS, gembok hijau.
@@ -177,7 +177,6 @@ Ikut cadangkan juga `.env` dan folder `storage/app/private` (scan surat BK/TU): 
    ```
    lalu `php artisan migrate --force && php artisan config:cache`.
 3. Admin → **Pusat**: klik *Uji koneksi*, lalu *Periksa* (simulasi) sebelum *Terapkan*. Tombol "Masuk lewat Pusat" muncul di halaman login; login lokal tetap ada sebagai cadangan.
-4. Mengisi Pusat dari data Absensi yang sudah ada: `php artisan pusat:ekspor` (lihat `docs/PUSAT.md`).
 
 ## 13. Memperbarui ke versi baru
 **Cara singkat (disarankan):**

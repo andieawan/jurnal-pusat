@@ -67,19 +67,9 @@ pengampu, dan akun guru tersalin.
 Beri akses **Jurnal Guru** untuk guru (peran `guru`; juga `kepsek`, `bk`, `tu`, `admin` sesuai tugas), satu per satu atau
 lewat *Buat akun sekaligus* (peran awal guru di Jurnal sudah terisi). Jurnal adalah aplikasi kehadiran sekolah: BK
 membaca dan menulis kehadiran ke Jurnal lewat sambungan "Jurnal Guru → BK" di Pusat → Administrasi → Sambungan.
+Catatan BK, surat, dan absensi guru/staf ada di aplikasi BK dan TU (menu akun → *Pindah ke aplikasi lain*).
 
-## 5. Setelah BK dan TU terpasang
-
-Jurnal masih punya menu BK dan TU bawaan. Agar menu itu membuka aplikasi BK dan TU, isi di `.env` Jurnal:
-
-```ini
-BK_URL=https://bk.smkibupakusari.sch.id
-TU_URL=https://tu.smkibupakusari.sch.id
-```
-
-lalu `sudo -u www-data php artisan config:clear`.
-
-## 6. Perangkat Ajar & asisten AI (opsional)
+## 5. Perangkat Ajar & asisten AI (opsional)
 
 Menu **Perangkat Ajar** (modul ajar, LKPD, asesmen & rubrik, bahan bacaan, tindak lanjut). Ada dua cara guru
 mendapatkan perangkat untuk kelasnya:
@@ -130,7 +120,7 @@ Tanpa kunci, perangkat tetap bisa dibuat dari templat atau diisi manual. Yang di
 pembelajaran dan bahan rujukan, tanpa nama guru atau siswa. `GEMINI_MODEL` (bawaan `gemini-flash-latest`) bisa
 diganti bila perlu.
 
-## 7. Cek akhir
+## 6. Cek akhir
 
 - Buka `https://jurnal.smkibupakusari.sch.id` → *Masuk lewat Pusat* → menu **Mengajar** muncul.
 - Admin → Integrasi Pusat menampilkan sinkron terakhir berhasil.

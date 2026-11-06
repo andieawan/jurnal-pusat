@@ -3,7 +3,7 @@
 <div class="card" style="max-width:460px;margin:0 auto">
     <h1>Ganti Password</h1><p class="mut">Akun: <b>{{ auth()->user()->username }}</b></p>
     @if($pusat ?? null)
-        <div class="alert alert-info"><span class="alert-ic" aria-hidden="true">i</span><span class="alert-txt">Akun ini dari <b>Pusat Sekolah</b>. Ganti password di Pusat; password baru otomatis berlaku juga untuk login di Absensi dan aplikasi lain.</span></div>
+        <div class="alert alert-info"><span class="alert-ic" aria-hidden="true">i</span><span class="alert-txt">Akun ini dari <b>Pusat Sekolah</b>. Ganti password di Pusat; password baru otomatis berlaku juga untuk login di Jurnal dan aplikasi lain.</span></div>
         <div class="row"><a class="btn btn-pri" href="{{ $pusat }}" target="_blank" rel="noopener">Ganti password di Pusat ↗</a><a class="btn" href="{{ route('dashboard') }}">Kembali</a></div>
     @else
     <form method="post" action="{{ route('password') }}" autocomplete="off">@csrf

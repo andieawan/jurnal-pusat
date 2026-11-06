@@ -31,7 +31,7 @@ class Subject extends Model
         return $ada ??= \Illuminate\Support\Facades\Schema::hasColumn('subjects', 'aktif');
     }
 
-    /** Daftar mapel sudah diambil dari Pusat → tambah/ubah/hapus di Absensi dikunci. */
+    /** Daftar mapel sudah diambil dari Pusat → tambah/ubah/hapus di Jurnal dikunci. */
     public static function dariPusat(): bool
     {
         return \App\Services\PusatKlien::kelolaSiswa() && (bool) \App\Services\PusatKlien::baca('mapel_pusat');

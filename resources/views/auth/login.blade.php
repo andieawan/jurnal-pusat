@@ -5,7 +5,6 @@
     <img class="logo-login" src="{{ asset('icons/icon-192.png') }}?v={{ @filemtime(public_path('icons/icon-192.png')) }}" alt="" width="56" height="56">
     <h1>{{ $switching ? 'Ganti Akun' : 'Jurnal Guru' }}</h1>
     <p class="mut">{{ $settings->school_name }}<br>{{ $switching ? 'Pindah ke akun lain.' : 'Masuk dengan akun Pusat Sekolah.' }}</p>
-    @if($needsInstall ?? false)<div class="alert alert-info">Aplikasi belum dipasang. <a href="{{ route('install') }}">Buka halaman instalasi →</a></div>@endif
 
     @if($viaPusat)
         @if($switching)

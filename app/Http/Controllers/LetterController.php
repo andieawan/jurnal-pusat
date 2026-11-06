@@ -8,45 +8,12 @@ use App\Models\GradeValue;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Subject;
-use App\Services\Audit;
 use App\Services\Rules;
-use App\Support\LetterForms;
 use Illuminate\Http\Request;
 
-/** Surat resmi siap cetak (Ctrl+P → Simpan sebagai PDF), pengganti Google Docs. */
+/** Laporan kehadiran & nilai satu kelas per mapel, siap cetak (Ctrl+P → Simpan sebagai PDF). Surat BK ada di aplikasi BK. */
 class LetterController extends Controller
 {
-    private function authorizeStudent(Student $s): void
-    {
-        $u = $this->me();
-        abort_unless($u->hasRole('admin', 'superadmin', 'bk', 'kepsek') || $u->isWaliOf($s->class_id), 403, 'Surat hanya untuk Wali Kelas siswa, Guru BK, Kepala Sekolah, atau Administrator.');
-    }
-
-    public function warning(Request $request, Student $student)
-    {
-        return $this->form($request, 'peringatan', $student);
-    }
-
-    public function summons(Request $request, Student $student)
-    {
-        return $this->form($request, 'panggilan', $student);
-    }
-
-    /** Surat siswa bentuk resmi SMK IBU: panggilan, peringatan, teguran, pernyataan, berita acara, izin. */
-    public function form(Request $request, string $jenis, Student $student)
-    {
-        $this->authorizeStudent($student);
-        $title = LetterForms::TITLES[$jenis] ?? abort(404);
-        Audit::log('Cetak '.$title, 'Siswa', $this->me()->nama, "{$student->nama} ({$student->nis})");
-        $fields = LetterForms::fields($jenis, $student, $this->me(), $request);
-        $v = collect($fields)->mapWithKeys(fn ($f) => [$f['k'] => $f['v']])->all();
-
-        return view('letters.form', [
-            'jenis' => $jenis, 'title' => $title, 'student' => $student->load('schoolClass'), 'fields' => $fields, 'v' => $v,
-            'now' => LetterForms::dateParts(), 'cfg' => config('absensi.surat'),
-        ]);
-    }
-
     public function report(Request $request)
     {
         $class = SchoolClass::findOrFail((int) $request->query('class'));

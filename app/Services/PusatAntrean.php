@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Antrean kiriman ke Pusat. Bila Pusat tidak bisa dihubungi, perubahan tetap disimpan di Absensi dan diantrekan di sini,
+ * Antrean kiriman ke Pusat. Bila Pusat tidak bisa dihubungi, perubahan tetap disimpan di Jurnal dan diantrekan di sini,
  * lalu dikirim otomatis (setelah request selesai paling sering tiap 2 menit, tiap 5 menit lewat cron, dan saat Sinkron).
  * Satu baris per (jenis, kunci): perubahan berikutnya untuk siswa yang sama menimpa yang belum terkirim.
  */

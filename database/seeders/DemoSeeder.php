@@ -120,47 +120,5 @@ class DemoSeeder extends Seeder
                 }
             }
         }
-
-        if (\App\Support\DbUpdate::bkReady()) {
-            $bk = fn (string $j, int $sid, int $d, ?string $kat, string $judul, ?string $ur, ?string $st = null, bool $r = false, array $x = []) => \App\Models\BkRecord::create([
-                'jenis' => $j, 'student_id' => $sid, 'class_id' => Student::find($sid)->class_id, 'tanggal' => $ago($d), 'kategori' => $kat, 'judul' => $judul, 'uraian' => $ur,
-                'status' => $st, 'rahasia' => $r, 'extra' => $x ?: null, 'dicatat_oleh' => $ids['bu.maya']]);
-            $bk('pelanggaran', 1, 3, 'Ringan', 'Terlambat masuk kelas', 'Terlambat 20 menit tanpa keterangan.', 'Selesai');
-            $bk('pelanggaran', 14, 6, 'Sedang', 'Membolos jam ke-3 dan ke-4', 'Ditemukan di kantin saat jam pelajaran.', 'Proses');
-            $bk('kasus', 15, 9, 'Pribadi', 'Konseling masalah belajar', 'Siswa merasa kesulitan mengikuti pelajaran produktif.', 'Proses', true, ['layanan' => 'Konseling individu']);
-            $bk('prestasi', 3, 12, 'Kabupaten/Kota', 'Lomba Poster Digital', null, null, false, ['peringkat' => 'Juara 2']);
-            $bk('home_visit', 14, 5, 'Kunjungan rumah', 'Kunjungan ke rumah siswa', 'Orang tua bersedia memantau kehadiran anak.', 'Selesai', false, ['alamat' => 'Dusun Krajan, Pakusari']);
-        }
-
-        if (\App\Support\DbUpdate::tuReady()) {
-            $y = (int) substr($today, 0, 4);
-            $surat = [
-                ['masuk', 'biasa', 1, 18, 'Dinas Pendidikan Kab. Jember', 'Undangan rapat koordinasi kepala sekolah', 'Diproses', 'Kepala Sekolah'],
-                ['masuk', 'biasa', 2, 9, 'Kemenag Kab. Jember', 'Pemberitahuan jadwal asesmen', 'Baru', null],
-                ['keluar', 'aktif', 1, 14, 'Orang tua/wali', 'Surat Keterangan Siswa Aktif', null, null],
-                ['keluar', 'biasa', 2, 7, 'Dunia Usaha/Industri', 'Permohonan tempat PKL', null, null],
-            ];
-            foreach ($surat as [$arah, $jenis, $urut, $d, $pihak, $perihal, $st, $disp]) {
-                \App\Models\TuSurat::create(['arah' => $arah, 'jenis' => $jenis, 'urut' => $urut, 'tahun' => $y,
-                    'nomor' => $arah === 'keluar' ? \App\Services\TuService::nomor($jenis, $urut, $ago($d)) : null, 'tanggal' => $ago($d),
-                    'pihak' => $pihak, 'perihal' => $perihal, 'status' => $st, 'disposisi' => $disp, 'dicatat_oleh' => $ids['bu.tata']]);
-            }
-            $self = \App\Support\DbUpdate::selfReady();
-            foreach ([10, 9, 8, 7, 6, 5, 4, 3, 2, 1] as $d) {
-                if (in_array((int) gmdate('w', strtotime($ago($d).' UTC')), [0, 6], true)) {
-                    continue;
-                }
-                foreach (['ibu.siti', 'pak.hendra', 'bu.ratna', 'bu.maya', 'bu.tata'] as $un) {
-                    $r = mt_rand(1, 100);
-                    $st = $r <= 86 ? 'H' : ($r <= 92 ? 'S' : ($r <= 96 ? 'I' : 'D'));
-                    $row = ['user_id' => $ids[$un], 'tanggal' => $ago($d), 'status' => $st, 'notes' => $st === 'S' ? 'Sakit' : ($st === 'D' ? 'Tugas dinas' : null), 'dicatat_oleh' => $ids['bu.tata']];
-                    if ($self && $st === 'H') {
-                        $late = mt_rand(1, 100) <= 20;
-                        $row += ['jam_masuk' => $late ? '07:'.mt_rand(20, 50) : '06:'.mt_rand(30, 59), 'jam_pulang' => '15:'.sprintf('%02d', mt_rand(0, 30)), 'terlambat' => $late, 'sumber' => 'mandiri'];
-                    }
-                    \App\Models\StaffAttendance::create($row);
-                }
-            }
-        }
     }
 }

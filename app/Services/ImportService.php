@@ -12,7 +12,8 @@ use App\Support\TahunAjaran;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Impor massal dari Excel/CSV untuk Admin: kelas, mapel, siswa, guru & staf, pasangan mapel.
+ * Impor massal dari Excel/CSV untuk Admin: kelas, mapel, siswa, guru & staf, pasangan mapel,
+ * serta riwayat absensi & nilai dari catatan lama (buku/Excel).
  * Tiap baris diproses sendiri-sendiri: baris bermasalah dilewati dan dilaporkan, sisanya tetap masuk.
  * Mode "cek dulu" menjalankan semuanya lalu membatalkan (rollback) sehingga tidak ada yang tersimpan.
  */
@@ -59,23 +60,25 @@ class ImportService
             ],
             'absensi' => [
                 'title' => 'Riwayat Absensi', 'icon' => '🗂️', 'file' => 'Template_Impor_Riwayat_Absensi.xlsx',
-                'cols' => ['Timestamp', 'Nama Guru', 'Mata Pelajaran', 'Kelas', 'Tanggal', 'Hadir', 'Izin', 'Sakit', 'Alpa'],
-                'example' => [['', 'Siti Rahmawati', $m1, $k1, date('Y-m-d', strtotime('-1 day')), '2025001, 2025002', '', '', '']],
-                'notes' => ['Format ekspor aplikasi absensi lama: satu baris = satu sesi (kelas + mapel + tanggal); kolom Hadir/Izin/Sakit/Alpa berisi NIS dipisah koma.',
-                    'Berkas .xlsx boleh punya banyak sheet — semua sheet yang kolomnya cocok ikut diproses.',
-                    'Kelas & Mata Pelajaran harus sudah ada persis seperti di aplikasi (kosong/“Harian” = absen harian). NIS harus sama dengan NIS siswa.',
-                    'Catatan absensi yang SUDAH ada (siswa + tanggal + mapel yang sama) tidak ditimpa. Nama Guru yang cocok dengan akun dipakai sebagai pencatat; selain itu dicatat atas nama Admin.',
-                    'Kolom Timestamp diabaikan. Tanggal: YYYY-MM-DD atau DD/MM/YYYY; tanggal masa depan dilewati.'],
+                'cols' => ['Tanggal', 'Kelas', 'Mapel', 'NIS', 'Nama Siswa', 'Status', 'Catatan', 'Guru'],
+                'example' => [[date('Y-m-d', strtotime('-1 day')), $k1, '', '2025001', 'Ahmad Fauzi', 'H', '', ''], [date('Y-m-d', strtotime('-1 day')), $k1, $m1, '2025002', 'Siti Aisyah', 'S', 'Demam', 'ibu.siti']],
+                'notes' => ['Untuk memasukkan absensi lama (dari buku/Excel). Satu baris = satu siswa pada satu tanggal.',
+                    'Wajib: Tanggal (YYYY-MM-DD atau DD/MM/YYYY), Kelas, NIS, Status (H/I/S/A atau Hadir/Izin/Sakit/Alpa).',
+                    'Mapel kosong = absen harian (wali kelas). Bila diisi, nama mapel harus persis seperti di aplikasi.',
+                    'Kelas harus sudah ada dan NIS harus siswa di kelas itu — lihat lembar "Daftar Siswa". Nama Siswa hanya untuk memudahkan membaca, tidak diperiksa.',
+                    'Guru (opsional): username atau nama guru pencatat; kosong/tidak dikenal = dicatat atas nama Anda.',
+                    'Absensi yang SUDAH ada (siswa + tanggal + mapel sama) tidak ditimpa. Tanggal masa depan dilewati. Berkas .xlsx boleh banyak sheet (mis. satu sheet per bulan) dengan judul kolom yang sama.'],
             ],
             'nilai' => [
                 'title' => 'Riwayat Nilai', 'icon' => '📈', 'file' => 'Template_Impor_Riwayat_Nilai.xlsx',
-                'cols' => ['Timestamp', 'Nama Guru', 'Mapel', 'Kelas', 'KegiatanId', 'NamaKegiatan', 'TanggalKegiatan', 'TipeSkala', 'DataNilai'],
-                'example' => [['', 'Siti Rahmawati', $m1, $k1, '', 'Tugas 1', date('Y-m-d', strtotime('-7 days')), 'angka', '{"2025001":"80","2025002":"75"}']],
-                'notes' => ['Format ekspor aplikasi lama: satu baris = satu kegiatan penilaian (tugas/ulangan). Kolom DataNilai berisi JSON {"NIS":"nilai", …}.',
-                    'Urutan kolom harus tetap seperti template (judul kolom di baris pertama tiap sheet tidak dibaca, jadi sheet lama dengan judul keliru tetap aman). Berkas .xlsx boleh banyak sheet.',
-                    'TipeSkala: angka (0–100) atau huruf (A–E). Kelas & Mapel harus sudah ada persis seperti di aplikasi; NIS harus sama dengan NIS siswa di kelas itu.',
-                    'KegiatanId (kode unik dari aplikasi lama) dipakai untuk mencegah dobel: kegiatan dengan ID yang sudah ada dilewati. Kosong = dibuatkan otomatis.',
-                    'Nama Guru yang cocok dengan akun dipakai sebagai pemilik kegiatan; selain itu atas nama Admin. Nilai yang tidak valid atau NIS yang tidak dikenal dilewati dan dilaporkan; nilai lain di kegiatan yang sama tetap masuk.'],
+                'cols' => ['Kelas', 'Mapel', 'Nama Kegiatan', 'Tanggal', 'Tipe', 'NIS', 'Nama Siswa', 'Nilai', 'Guru'],
+                'example' => [[$k1, $m1, 'Tugas 1', date('Y-m-d', strtotime('-7 days')), 'angka', '2025001', 'Ahmad Fauzi', '80', 'ibu.siti'], [$k1, $m1, 'Tugas 1', date('Y-m-d', strtotime('-7 days')), 'angka', '2025002', 'Siti Aisyah', '75', 'ibu.siti']],
+                'notes' => ['Untuk memasukkan nilai lama (dari buku/Excel). Satu baris = nilai satu siswa pada satu kegiatan (tugas/ulangan).',
+                    'Baris dengan Kelas + Mapel + Nama Kegiatan + Tanggal yang sama digabung menjadi satu kegiatan.',
+                    'Wajib: Kelas, Mapel, Nama Kegiatan, Tanggal, NIS. Tipe: angka (0–100) atau huruf (A–E); kosong = angka. Nilai kosong = belum mengumpulkan.',
+                    'Kelas & Mapel harus sudah ada persis seperti di aplikasi; NIS harus siswa di kelas itu — lihat lembar "Daftar Siswa".',
+                    'Guru (opsional): username atau nama guru pemilik kegiatan; kosong/tidak dikenal = atas nama Anda.',
+                    'Kegiatan yang sudah ada (kelas, mapel, nama, dan tanggal sama) dilewati agar tidak dobel. Berkas .xlsx boleh banyak sheet dengan judul kolom yang sama.'],
             ],
             'pasangan' => [
                 'title' => 'Pasangan Mapel', 'icon' => '🔗', 'file' => 'Template_Impor_Pasangan_Mapel.xlsx',
@@ -97,7 +100,16 @@ class ImportService
         $notes[] = [''];
         $notes[] = ['Hapus baris contoh di lembar "Data", isi data Anda mulai baris ke-2 dengan judul kolom tetap di baris 1, lalu unggah di Admin → Impor Data.'];
 
-        return ['Data' => array_merge([$t['cols']], $t['example']), 'Petunjuk' => $notes];
+        $sheets = ['Data' => array_merge([$t['cols']], $t['example']), 'Petunjuk' => $notes];
+        if (in_array($type, ['absensi', 'nilai'], true)) {
+            $daftar = [['Kelas', 'NIS', 'Nama Siswa']];
+            foreach (\App\Models\Student::active()->with('schoolClass')->get()->sortBy(fn ($s) => [$s->schoolClass?->name, $s->nama]) as $st) {
+                $daftar[] = [$st->schoolClass?->name ?? '', $st->nis, $st->nama];
+            }
+            $sheets['Daftar Siswa'] = $daftar;
+        }
+
+        return $sheets;
     }
 
     /**
@@ -121,7 +133,7 @@ class ImportService
                 'guru' => self::guru($actor, $hdr, $rows, $out),
                 'pasangan' => self::pasangan($actor, $hdr, $rows, $out),
                 'absensi' => self::absensi($actor, $hdr, $rows, $out),
-                'nilai' => self::nilai($actor, $rows, $out),
+                'nilai' => self::nilai($actor, $hdr, $rows, $out),
             };
             $dry ? DB::rollBack() : DB::commit();
         } catch (\Throwable $e) {
@@ -198,176 +210,157 @@ class ImportService
         return \App\Support\Dates::valid($v) ? $v : null;
     }
 
-    /** Riwayat absensi format aplikasi lama (satu baris = satu sesi; kolom status berisi NIS dipisah koma). */
+    /** Guru pencatat dari kolom Guru (username atau nama); tidak dikenal = yang mengimpor. */
+    private static function pencatat(array $users, string $v, User $actor): int
+    {
+        return ($users['u:'.self::norm($v)] ?? $users['n:'.self::norm($v)] ?? null)?->id ?? $actor->id;
+    }
+
+    private static function userIndex(): array
+    {
+        $idx = [];
+        foreach (User::get(['id', 'username', 'nama']) as $u) {
+            $idx['n:'.self::norm($u->nama)] ??= $u;
+            $idx['u:'.self::norm($u->username)] = $u;
+        }
+
+        return $idx;
+    }
+
+    /** NIS (dinormalkan) → id siswa, per kelas. */
+    private static function roster(array &$cache, int $classId): array
+    {
+        return $cache[$classId] ??= \App\Models\Student::where('class_id', $classId)->get(['id', 'nis'])->mapWithKeys(fn ($s) => [self::norm($s->nis) => $s->id])->all();
+    }
+
+    /** Riwayat absensi: satu baris = satu siswa pada satu tanggal (harian atau per mapel). */
     private static function absensi(User $actor, array $hdr, array $rows, array &$out): void
     {
-        $iK = self::need($hdr, ['kelas'], 'Kelas');
         $iT = self::need($hdr, ['tanggal'], 'Tanggal');
-        $iM = \App\Support\Xlsx::col($hdr, ['mata pelajaran', 'mapel']);
-        $iG = \App\Support\Xlsx::col($hdr, ['nama guru', 'guru']);
-        $cols = ['H' => \App\Support\Xlsx::col($hdr, ['hadir']), 'I' => \App\Support\Xlsx::col($hdr, ['izin']), 'S' => \App\Support\Xlsx::col($hdr, ['sakit']), 'A' => \App\Support\Xlsx::col($hdr, ['alpa', 'alfa'])];
-        if (! array_filter($cols, fn ($c) => $c !== null)) {
-            throw new UserError('Kolom Hadir/Izin/Sakit/Alpa tidak ditemukan di baris pertama berkas.');
-        }
+        $iK = self::need($hdr, ['kelas'], 'Kelas');
+        $iN = self::need($hdr, ['nis'], 'NIS');
+        $iS = self::need($hdr, ['status', 'kehadiran'], 'Status');
+        $iM = \App\Support\Xlsx::col($hdr, ['mapel', 'mata pelajaran']);
+        $iC = \App\Support\Xlsx::col($hdr, ['catatan', 'keterangan']);
+        $iG = \App\Support\Xlsx::col($hdr, ['guru', 'pencatat']);
+        $kode = ['h' => 'H', 'hadir' => 'H', 'i' => 'I', 'izin' => 'I', 's' => 'S', 'sakit' => 'S', 'a' => 'A', 'alpa' => 'A', 'alfa' => 'A', 'tanpa keterangan' => 'A'];
         $classes = SchoolClass::get()->keyBy(fn ($c) => self::norm($c->name));
         $subjects = Subject::get()->keyBy(fn ($s) => self::norm($s->name));
-        $users = User::get()->keyBy(fn ($u) => self::norm($u->nama));
-        $roster = []; // class_id => nis(norm) => student id
+        $users = self::userIndex();
+        $roster = [];
+        $seen = [];
         $now = now('UTC')->format('Y-m-d H:i:s');
         foreach ($rows as $n => $r) {
             if (self::blank($r)) {
                 continue;
             }
             $row = 'Baris '.($n + 2);
-            $cls = $classes[self::norm(self::cell($r, $iK))] ?? null;
-            if (! $cls) {
-                $out['skip'][] = "$row: kelas '".self::cell($r, $iK)."' tidak ditemukan";
-                continue;
-            }
             $tgl = self::parseDate(self::cell($r, $iT));
-            if (! $tgl) {
-                $out['skip'][] = "$row: tanggal '".self::cell($r, $iT)."' tidak valid";
-                continue;
-            }
-            if (\App\Support\Dates::isFuture($tgl)) {
-                $out['skip'][] = "$row: tanggal $tgl di masa depan";
-                continue;
-            }
+            $cls = $classes[self::norm(self::cell($r, $iK))] ?? null;
+            $nis = self::cell($r, $iN);
+            $st = $kode[self::norm(self::cell($r, $iS))] ?? null;
             $mp = self::cell($r, $iM);
-            $subjectId = null;
-            if ($mp !== '' && ! in_array(self::norm($mp), ['harian', '-', 'absen harian'], true)) {
-                $sub = $subjects[self::norm($mp)] ?? null;
-                if (! $sub) {
-                    $out['skip'][] = "$row: mapel '$mp' tidak ditemukan";
-                    continue;
-                }
-                $subjectId = $sub->id;
-            }
-            $roster[$cls->id] ??= \App\Models\Student::where('class_id', $cls->id)->get()->keyBy(fn ($s) => self::norm($s->nis))->map(fn ($s) => $s->id)->all();
-            $guru = self::cell($r, $iG);
-            $by = ($users[self::norm($guru)] ?? null)?->id ?? $actor->id;
-            $via = str_starts_with(self::norm($guru), 'impor manual') ? 'upload_hardcopy' : 'guru';
-
-            $want = []; // student id => status
-            foreach ($cols as $st => $ci) {
-                foreach (preg_split('/\s*,\s*/', self::cell($r, $ci), -1, PREG_SPLIT_NO_EMPTY) as $nis) {
-                    $sid = $roster[$cls->id][self::norm($nis)] ?? null;
-                    if (! $sid) {
-                        $out['skip'][] = "$row ({$cls->name}, $tgl): NIS '$nis' tidak ada di kelas ini — dilewati";
-                    } elseif (isset($want[$sid])) {
-                        $out['skip'][] = "$row ({$cls->name}, $tgl): NIS '$nis' muncul di lebih dari satu status — dilewati";
-                        $want[$sid] = false;
-                    } else {
-                        $want[$sid] = $st;
-                    }
-                }
-            }
-            $want = array_filter($want);
-            if (! $want) {
-                $out['skip'][] = "$row: tidak ada siswa valid pada baris ini";
+            $sub = $mp === '' || in_array(self::norm($mp), ['harian', '-'], true) ? null : ($subjects[self::norm($mp)] ?? false);
+            $sid = $cls ? (self::roster($roster, $cls->id)[self::norm($nis)] ?? null) : null;
+            $catatan = self::cell($r, $iC);
+            $galat = match (true) {
+                ! $tgl => "tanggal '".self::cell($r, $iT)."' tidak valid",
+                \App\Support\Dates::isFuture($tgl) => "tanggal $tgl di masa depan",
+                ! $cls => "kelas '".self::cell($r, $iK)."' tidak ditemukan",
+                $sub === false => "mapel '$mp' tidak ditemukan",
+                ! $sid => "NIS '$nis' tidak ada di kelas {$cls->name}",
+                ! $st => "status '".self::cell($r, $iS)."' harus H/I/S/A",
+                mb_strlen($catatan) > 500 => 'catatan lebih dari 500 karakter',
+                default => null,
+            };
+            if ($galat) {
+                $out['skip'][] = "$row: $galat";
                 continue;
             }
-            $have = \App\Models\Attendance::whereIn('student_id', array_keys($want))->where('tanggal', $tgl)
-                ->when($subjectId === null, fn ($q) => $q->whereNull('subject_id'), fn ($q) => $q->where('subject_id', $subjectId))->pluck('student_id')->all();
-            $added = 0;
-            foreach ($want as $sid => $st) {
-                if (in_array($sid, $have, true)) {
-                    continue;
-                }
-                \App\Models\Attendance::create(['student_id' => $sid, 'class_id' => $cls->id, 'subject_id' => $subjectId, 'tanggal' => $tgl, 'status' => $st,
-                    'recorded_by' => $by, 'recorded_via' => $via, 'created_at' => $now, 'updated_at' => $now, 'created_at_millis' => \App\Support\Dates::parse($tgl) * 1000]);
-                $added++;
+            $key = $sid.'|'.($sub?->id ?? '-').'|'.$tgl;
+            $ada = isset($seen[$key]) || \App\Models\Attendance::where(['student_id' => $sid, 'tanggal' => $tgl])
+                ->when($sub, fn ($q) => $q->where('subject_id', $sub->id), fn ($q) => $q->whereNull('subject_id'))->exists();
+            if ($ada) {
+                $out['skip'][] = "$row (NIS $nis, $tgl): absensi sudah ada — tidak ditimpa";
+                continue;
             }
-            if ($have) {
-                $out['skip'][] = "$row ({$cls->name}, $tgl): ".count($have).' catatan sudah ada — tidak ditimpa';
-            }
-            if ($added) {
-                $out['ok']++;
-            }
+            $seen[$key] = true;
+            \App\Models\Attendance::create(['student_id' => $sid, 'class_id' => $cls->id, 'subject_id' => $sub?->id, 'tanggal' => $tgl, 'status' => $st, 'notes' => $catatan ?: null,
+                'recorded_by' => self::pencatat($users, self::cell($r, $iG), $actor), 'recorded_via' => 'impor', 'created_at' => $now, 'updated_at' => $now, 'created_at_millis' => \App\Support\Dates::parse($tgl) * 1000]);
+            $out['ok']++;
         }
     }
 
-    /** Riwayat nilai format aplikasi lama. Kolom DIBACA BERDASARKAN URUTAN (judul di sheet lama kadang keliru). */
-    private static function nilai(User $actor, array $rows, array &$out): void
+    /** Riwayat nilai: satu baris = nilai satu siswa; baris dengan kelas+mapel+kegiatan+tanggal sama menjadi satu kegiatan. */
+    private static function nilai(User $actor, array $hdr, array $rows, array &$out): void
     {
+        $iK = self::need($hdr, ['kelas'], 'Kelas');
+        $iM = self::need($hdr, ['mapel', 'mata pelajaran'], 'Mapel');
+        $iA = self::need($hdr, ['nama kegiatan', 'kegiatan'], 'Nama Kegiatan');
+        $iT = self::need($hdr, ['tanggal', 'tanggal kegiatan'], 'Tanggal');
+        $iN = self::need($hdr, ['nis'], 'NIS');
+        $iV = self::need($hdr, ['nilai'], 'Nilai');
+        $iP = \App\Support\Xlsx::col($hdr, ['tipe', 'tipe skala']);
+        $iG = \App\Support\Xlsx::col($hdr, ['guru', 'pemilik']);
         $classes = SchoolClass::get()->keyBy(fn ($c) => self::norm($c->name));
         $subjects = Subject::get()->keyBy(fn ($s) => self::norm($s->name));
-        $users = User::get()->keyBy(fn ($u) => self::norm($u->nama));
+        $users = self::userIndex();
         $roster = [];
+        $groups = []; // kunci kegiatan → data kegiatan + nilai
         foreach ($rows as $n => $r) {
             if (self::blank($r)) {
                 continue;
             }
             $row = 'Baris '.($n + 2);
-            [$ts, $guru, $mp, $kl, $kid, $nama, $tgl, $tipe, $json] = array_map(fn ($i) => self::cell($r, $i), range(0, 8));
-            $cls = $classes[self::norm($kl)] ?? null;
-            $sub = $subjects[self::norm($mp)] ?? null;
-            if (! $cls) {
-                $out['skip'][] = "$row: kelas '$kl' tidak ditemukan";
+            $cls = $classes[self::norm(self::cell($r, $iK))] ?? null;
+            $sub = $subjects[self::norm(self::cell($r, $iM))] ?? null;
+            $nama = self::cell($r, $iA);
+            $tgl = self::parseDate(self::cell($r, $iT));
+            $tipe = strtolower(self::cell($r, $iP)) ?: 'angka';
+            $nis = self::cell($r, $iN);
+            $v = self::cell($r, $iV);
+            $sid = $cls ? (self::roster($roster, $cls->id)[self::norm($nis)] ?? null) : null;
+            $galat = match (true) {
+                ! $cls => "kelas '".self::cell($r, $iK)."' tidak ditemukan",
+                ! $sub => "mapel '".self::cell($r, $iM)."' tidak ditemukan",
+                $nama === '' || mb_strlen($nama) > 191 => 'nama kegiatan kosong/terlalu panjang',
+                ! $tgl => "tanggal '".self::cell($r, $iT)."' tidak valid",
+                \App\Support\Dates::isFuture($tgl) => "tanggal $tgl di masa depan",
+                ! in_array($tipe, ['angka', 'huruf'], true) => "tipe '$tipe' harus angka/huruf",
+                ! $sid => "NIS '$nis' tidak ada di kelas {$cls->name}",
+                $v !== '' && $tipe === 'angka' && (! is_numeric($v) || (float) $v < 0 || (float) $v > 100) => "nilai '$v' bukan angka 0–100",
+                $v !== '' && $tipe === 'huruf' && ! in_array(strtoupper($v), ['A', 'B', 'C', 'D', 'E'], true) => "nilai '$v' bukan huruf A–E",
+                default => null,
+            };
+            if ($galat) {
+                $out['skip'][] = "$row: $galat";
                 continue;
             }
-            if (! $sub) {
-                $out['skip'][] = "$row: mapel '$mp' tidak ditemukan";
+            $key = $cls->id.'|'.$sub->id.'|'.self::norm($nama).'|'.$tgl;
+            $groups[$key] ??= ['cls' => $cls, 'sub' => $sub, 'nama' => $nama, 'tgl' => $tgl, 'tipe' => $tipe, 'guru' => self::pencatat($users, self::cell($r, $iG), $actor), 'vals' => [], 'row' => $row];
+            if ($groups[$key]['tipe'] !== $tipe) {
+                $out['skip'][] = "$row: tipe berbeda dengan baris lain pada kegiatan '$nama' — dilewati";
+            } elseif (isset($groups[$key]['vals'][$sid])) {
+                $out['skip'][] = "$row: NIS '$nis' muncul dua kali pada kegiatan '$nama' — dilewati";
+            } elseif ($v !== '') {
+                $groups[$key]['vals'][$sid] = $tipe === 'huruf' ? strtoupper($v) : $v;
+            }
+        }
+        $now = now('UTC')->format('Y-m-d H:i:s');
+        foreach ($groups as $g) {
+            $label = "{$g['nama']} ({$g['cls']->name}, {$g['sub']->name}, {$g['tgl']})";
+            if (\App\Models\GradeActivity::where(['class_id' => $g['cls']->id, 'subject_id' => $g['sub']->id, 'nama_kegiatan' => $g['nama'], 'tanggal_kegiatan' => $g['tgl']])->exists()) {
+                $out['skip'][] = "Kegiatan $label sudah ada — dilewati";
                 continue;
             }
-            $tipe = strtolower($tipe);
-            if (! in_array($tipe, ['angka', 'huruf'], true)) {
-                $out['skip'][] = "$row: tipe skala '$tipe' harus angka/huruf";
+            if (! $g['vals']) {
+                $out['skip'][] = "Kegiatan $label: tidak ada nilai terisi — tidak dibuat";
                 continue;
             }
-            if ($nama === '' || mb_strlen($nama) > 191) {
-                $out['skip'][] = "$row: nama kegiatan kosong/terlalu panjang";
-                continue;
-            }
-            $scores = json_decode($json, true);
-            if (! is_array($scores) || ! $scores) {
-                $out['skip'][] = "$row ($nama): kolom DataNilai bukan JSON {\"NIS\":\"nilai\"} yang valid";
-                continue;
-            }
-            $tanggal = self::parseDate($tgl) ?? self::parseDate($ts);
-            if (! $tanggal) {
-                $out['skip'][] = "$row ($nama): tanggal kegiatan tidak valid";
-                continue;
-            }
-            if (\App\Support\Dates::isFuture($tanggal)) {
-                $out['skip'][] = "$row ($nama): tanggal $tanggal di masa depan";
-                continue;
-            }
-            $id = $kid !== '' ? $kid : 'act-'.\Illuminate\Support\Str::uuid();
-            if (mb_strlen($id) > 64) {
-                $out['skip'][] = "$row ($nama): KegiatanId lebih dari 64 karakter";
-                continue;
-            }
-            if (\App\Models\GradeActivity::whereKey($id)->exists()) {
-                $out['skip'][] = "$row ($nama, {$cls->name}): kegiatan dengan ID ini sudah ada — dilewati";
-                continue;
-            }
-            $roster[$cls->id] ??= \App\Models\Student::where('class_id', $cls->id)->get()->keyBy(fn ($s) => self::norm($s->nis))->map(fn ($s) => $s->id)->all();
-            $vals = [];
-            foreach ($scores as $nis => $v) {
-                $nis = (string) $nis;
-                $v = trim((string) $v);
-                $sid = $roster[$cls->id][self::norm($nis)] ?? null;
-                if (! $sid) {
-                    $out['skip'][] = "$row ($nama, {$cls->name}): NIS '$nis' tidak ada di kelas ini — nilainya dilewati";
-                } elseif ($v === '') {
-                    continue; // belum mengumpulkan
-                } elseif ($tipe === 'angka' && (! is_numeric($v) || (float) $v < 0 || (float) $v > 100)) {
-                    $out['skip'][] = "$row ($nama): nilai '$v' untuk NIS '$nis' bukan angka 0–100 — dilewati";
-                } elseif ($tipe === 'huruf' && ! in_array(strtoupper($v), ['A', 'B', 'C', 'D', 'E'], true)) {
-                    $out['skip'][] = "$row ($nama): nilai '$v' untuk NIS '$nis' bukan huruf A–E — dilewati";
-                } else {
-                    $vals[$sid] = $tipe === 'huruf' ? strtoupper($v) : $v;
-                }
-            }
-            if (! $vals) {
-                $out['skip'][] = "$row ($nama, {$cls->name}): tidak ada nilai valid — kegiatan tidak dibuat";
-                continue;
-            }
-            $created = ($t = strtotime(str_replace('/', '-', $ts))) ? gmdate('Y-m-d H:i:s', $t) : now('UTC')->format('Y-m-d H:i:s');
-            \App\Models\GradeActivity::create(['id' => $id, 'teacher_id' => ($users[self::norm($guru)] ?? null)?->id ?? $actor->id, 'subject_id' => $sub->id, 'class_id' => $cls->id,
-                'nama_kegiatan' => $nama, 'tanggal_kegiatan' => $tanggal, 'tipe_skala' => $tipe, 'created_at' => $created]);
-            \App\Models\GradeValue::insert(array_map(fn ($sid, $v) => ['activity_id' => $id, 'student_id' => $sid, 'nilai' => $v], array_keys($vals), $vals));
+            $id = 'act-'.\Illuminate\Support\Str::uuid();
+            \App\Models\GradeActivity::create(['id' => $id, 'teacher_id' => $g['guru'], 'subject_id' => $g['sub']->id, 'class_id' => $g['cls']->id,
+                'nama_kegiatan' => $g['nama'], 'tanggal_kegiatan' => $g['tgl'], 'tipe_skala' => $g['tipe'], 'created_at' => $now]);
+            \App\Models\GradeValue::insert(array_map(fn ($sid, $v) => ['activity_id' => $id, 'student_id' => $sid, 'nilai' => $v], array_keys($g['vals']), $g['vals']));
             $out['ok']++;
         }
     }

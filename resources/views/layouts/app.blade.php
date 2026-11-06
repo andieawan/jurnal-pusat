@@ -48,13 +48,8 @@
         ];
         $extra = [];
         if ($me->can('perangkat')) $extra[] = ['perangkat', 'Perangkat Ajar', 'Perangkat', 'i-file', 'perangkat*'];
-        if ($me->can('absen-mandiri') && \App\Services\StaffService::selfActive()) $extra[] = ['selfcheck', 'Absen Saya', 'Absen Saya', 'i-clock', 'selfcheck'];
         if ($me->can('lihat-sekolah')) $extra[] = ['monitor', 'Pantau', 'Pantau', 'i-eye', 'monitor'];
-        // Modul TU/BK sudah menjadi aplikasi sendiri bila alamatnya diisi: tidak ditampilkan lagi di menu Absensi
-        // (bukanya lewat menu akun → Pindah ke aplikasi lain).
-        $appLain = collect((array) session('aplikasi_lain', []))->pluck('kode')->all();
-        if ($me->can('tu-lihat') && ! config('absensi.tu_url') && ! in_array('tu', $appLain, true)) $extra[] = ['tu.home', 'TU', 'TU', 'i-folder', 'tu.*'];
-        if ($me->can('bk-modul') && ! config('absensi.bk_url') && ! in_array('bk', $appLain, true)) $extra[] = ['bk.home', 'BK', 'BK', 'i-heart', 'bk*'];
+        // BK dan TU adalah aplikasi sendiri: dibuka lewat menu akun → Pindah ke aplikasi lain.
         if ($me->can('admin')) $extra[] = ['admin.teachers', 'Admin', 'Admin', 'i-gear', 'admin.*'];
         $initial = mb_strtoupper(mb_substr(trim(preg_replace('/^(Dra?\.|Drs\.|Ir\.|H\.|Hj\.)\s*/i', '', $me->nama)), 0, 1));
     @endphp
@@ -62,7 +57,7 @@
         <a class="brand" href="{{ route('dashboard') }}"><img class="logo-img" src="{{ asset('icons/icon-192.png') }}?v={{ @filemtime(public_path('icons/icon-192.png')) }}" alt="" width="38" height="38"><span><b>Jurnal Guru</b><small>{{ $settings->school_name }}</small></span></a>
         <nav class="tabs" aria-label="Menu utama">
             @foreach(array_merge($tabs, $extra) as [$r, $label, , $icon, $pat])
-                <a href="{{ ($r === 'bk.home' && config('absensi.bk_url')) ? config('absensi.bk_url') : (($r === 'tu.home' && config('absensi.tu_url')) ? config('absensi.tu_url') : (($r === 'selfcheck' && config('absensi.tu_url')) ? rtrim(config('absensi.tu_url'), '/').'/absen-saya' : route($r))) }}" @if(request()->routeIs($pat)) class="on" aria-current="page" @endif><svg class="ic"><use href="#{{ $icon }}"/></svg>{{ $label }}</a>
+                <a href="{{ route($r) }}" @if(request()->routeIs($pat)) class="on" aria-current="page" @endif><svg class="ic"><use href="#{{ $icon }}"/></svg>{{ $label }}</a>
             @endforeach
         </nav>
         <details class="acct" data-close-outside>

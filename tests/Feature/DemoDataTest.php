@@ -3,12 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Attendance;
-use App\Models\BkRecord;
 use App\Models\GradeValue;
 use App\Models\SchoolClass;
-use App\Models\StaffAttendance;
 use App\Models\Student;
-use App\Models\TuSurat;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -34,9 +31,6 @@ class DemoDataTest extends TestCase
         $this->assertSame([4, 48], [SchoolClass::count(), Student::count()]);
         $this->assertGreaterThan(100, Attendance::count());
         $this->assertGreaterThan(0, GradeValue::count());
-        $this->assertSame(5, BkRecord::count());
-        $this->assertSame(4, TuSurat::count());
-        $this->assertGreaterThan(20, StaffAttendance::count());
         $this->assertNotNull(Student::find(1)->telp_ortu);
 
         // Tidak bisa dua kali; tombol hilang
@@ -45,7 +39,7 @@ class DemoDataTest extends TestCase
         $this->assertSame(48, Student::count());
 
         // Akun contoh bisa login & halaman utama tampil
-        foreach (['ibu.siti' => '/', 'bu.ratna' => '/pantau', 'bu.maya' => '/bk', 'bu.tata' => '/tu'] as $u => $url) {
+        foreach (['ibu.siti' => '/', 'bu.ratna' => '/pantau', 'bu.maya' => '/rekap', 'bu.tata' => '/'] as $u => $url) {
             $this->post('/logout');
             $this->actingAs(User::where('username', $u)->first())->get($url)->assertOk();
         }

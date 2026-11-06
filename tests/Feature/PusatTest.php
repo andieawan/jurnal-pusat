@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
-use App\Services\PusatEkspor;
 use App\Services\PusatKlien;
 use App\Support\PusatTanda;
 use Illuminate\Http\Client\Request;
@@ -452,30 +451,4 @@ class PusatTest extends TestCase
         $this->webhook('ping', [])->assertNotFound();
     }
 
-    // ---- Ekspor ----
-
-    public function test_ekspor_menghasilkan_empat_csv_format_pusat(): void
-    {
-        $dir = storage_path('framework/testing/pusat-ekspor');
-        $hasil = PusatEkspor::tulis($dir);
-        $this->assertCount(4, $hasil);
-
-        $kelas = file($dir.'/2-kelas.csv', FILE_IGNORE_NEW_LINES);
-        $this->assertSame("\xEF\xBB\xBFnama;tingkat;jurusan;tahun_ajaran;wali", $kelas[0]);
-        $this->assertStringContainsString('"X RPL 1";X;RPL;;wali', implode("\n", $kelas)); // wali kelas -> username
-        $siswa = file_get_contents($dir.'/3-siswa.csv');
-        $this->assertStringContainsString('N-1;;"Siswa 1";L;"X RPL 1";aktif', $siswa);
-        $akun = file_get_contents($dir.'/4-akun.csv');
-        $this->assertStringContainsString('wali;Wali;;wali;guru|wali_kelas', $akun);
-        $this->assertStringContainsString('admin;Admin;;admin;admin', $akun);
-    }
-
-    public function test_tingkat_dan_status_ekspor(): void
-    {
-        $this->assertSame('XII', PusatEkspor::tingkat('XII DKV 2'));
-        $this->assertSame('X', PusatEkspor::tingkat('X RPL 1'));
-        $this->assertSame('', PusatEkspor::tingkat('Kelas Khusus'));
-        $this->assertSame('keluar', PusatEkspor::status('berhenti'));
-        $this->assertSame('lulus', PusatEkspor::status('lulus'));
-    }
 }

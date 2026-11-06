@@ -86,13 +86,6 @@ class IndukPusatTest extends TestCase
         $this->assertSame('2026/2027', SchoolSetting::current()->tahun_ajaran);
     }
 
-    public function test_menu_bk_tu_disembunyikan_bila_aplikasi_terpisah(): void
-    {
-        $this->actingAs($this->admin)->get('/')->assertOk()->assertSee('>TU<', false);
-        config(['absensi.tu_url' => 'https://tu.test', 'absensi.bk_url' => 'https://bk.test']);
-        $this->actingAs($this->admin)->get('/')->assertOk()->assertDontSee('>TU<', false)->assertDontSee('>BK<', false);
-    }
-
     public function test_menu_admin_dikelompokkan_dan_halaman_pusat_disembunyikan(): void
     {
         $r = $this->actingAs($this->admin)->get('/admin/integrasi')->assertOk();

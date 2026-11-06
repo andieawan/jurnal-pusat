@@ -24,10 +24,10 @@ class IndukPusat
         }
         $kunci = array_merge(['kelas', 'guru', 'siswa'], $mapelPusat ? ['mapel'] : [], $pengampuPusat ? ['pasangan'] : []);
         if ($request->route('type') !== null && ! in_array($request->route('type'), $kunci, true)) {
-            return $next($request); // impor absensi/nilai (dan mapel/pasangan sebelum diambil dari Pusat) tetap di Absensi
+            return $next($request); // impor absensi/nilai (dan mapel/pasangan sebelum diambil dari Pusat) tetap di Jurnal
         }
         $apa = ['Mapel' => 'Mata_pelajaran', 'Pasangan' => 'Pasangan_mapel (Pengampu Mapel)'][$apa] ?? $apa;
 
-        return back()->with('error', str_replace('_', ' ', $apa).' dikelola di Pusat Sekolah. Ubah di Pusat; perubahan tersalin otomatis ke Absensi.');
+        return back()->with('error', str_replace('_', ' ', $apa).' dikelola di Pusat Sekolah. Ubah di Pusat; perubahan tersalin otomatis ke Jurnal.');
     }
 }

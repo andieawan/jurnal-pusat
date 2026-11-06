@@ -5,7 +5,7 @@
     <div class="alert alert-warn"><span class="alert-ic" aria-hidden="true">!</span><span class="alert-txt">Fitur ini butuh pembaruan database. Buka <a href="{{ route('admin.settings') }}">Pengaturan → Perbarui Database Sekarang</a>.</span></div>
 @else
 @php($induk = \App\Services\PusatKlien::kelolaSiswa())
-@if($induk)@include('admin._induk', ['apa' => 'Jurusan', 'path' => '/admin/data/jurusan', 'ket' => 'Jurusan dan kelas ditambah/diubah di Pusat lalu tersalin otomatis ke Absensi.'])@endif
+@if($induk)@include('admin._induk', ['apa' => 'Jurusan', 'path' => '/admin/data/jurusan', 'ket' => 'Jurusan dan kelas ditambah/diubah di Pusat lalu tersalin otomatis ke Jurnal.'])@endif
 @if(! $induk && $unknown->isNotEmpty())
 <div class="alert alert-warn"><span class="alert-ic" aria-hidden="true">!</span><span class="alert-txt">Ada kode jurusan di data kelas yang belum terdaftar: <b>{{ $unknown->implode(', ') }}</b>.
     <form method="post" action="{{ route('admin.majors.sync') }}" class="inline">@csrf<button class="btn btn-sm">Daftarkan otomatis</button></form></span></div>

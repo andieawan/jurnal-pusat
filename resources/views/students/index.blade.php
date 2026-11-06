@@ -31,7 +31,6 @@
             <div class="head" style="margin-bottom:12px">
                 <div><h1>{{ $student->nama }}</h1><small class="mono">{{ $student->nis }}</small> · <small>{{ $student->schoolClass->name ?? '-' }} · {{ $student->jk === 'L' ? 'Laki-laki' : 'Perempuan' }}</small>
                     <span @class(['badge', 'b-ok' => $student->status === 'aktif', 'b-warn' => $student->status !== 'aktif'])>{{ $student->status }}</span></div>
-                @if($canLetter)@include('letters._menu', ['student' => $student])@endif
             </div>
             <div class="grid g5">
                 <div class="kpi"><small>Kehadiran</small><div class="n mono {{ $rc($stats['rate']) }}">{{ number_format($stats['rate'], 1) }}%</div></div>
@@ -41,7 +40,7 @@
                 <div class="kpi"><small>Alpa</small><div class="n mono bad">{{ $stats['alpa'] }}</div></div>
             </div>
             @if($attention['category'])<p style="margin-top:12px"><span class="badge b-warn">Perlu perhatian: {{ \App\Services\Analytics::CATEGORIES[$attention['category']] }}</span></p>@endif
-            @if($canLetter)
+            @if($canContact)
                 @php($portal = $newToken ?: $tokens->firstWhere('status', 'aktif')?->token)
                 @php($waSum = \App\Support\WhatsApp::link($student->telp_ortu, \App\Support\WhatsApp::summaryMessage($student, $stats, $portal ? route('parent', $portal) : null, auth()->user()->nama)))
                 <div class="contact-row">
@@ -93,21 +92,6 @@
             </tbody></table></div>@endif
         </div>
 
-        @if($bkRecords !== null)
-        <div class="card card-tight"><div class="row" style="padding:14px 16px;justify-content:space-between"><h2>Catatan BK ({{ $bkRecords->count() }})</h2>
-            @if(\App\Services\BkService::isCounselor(auth()->user()))<a class="btn btn-sm" href="{{ route('bk.records', ['kasus', 'siswa' => $student->id]) }}">+ Catat</a>@endif</div>
-            @if($bkRecords->isEmpty())<div class="empty">Belum ada catatan BK untuk siswa ini.</div>@else
-            @foreach($bkRecords as $r)
-                @php($mod = \App\Support\BkModules::get($r->jenis))
-                <a class="stu" style="color:inherit" href="{{ route('bk.records', [$r->jenis, 'siswa' => $student->id]) }}">
-                    <span aria-hidden="true">{{ $mod['icon'] ?? '•' }}</span>
-                    <span class="nm"><b>{{ \App\Services\BkService::isMasked(auth()->user(), $r) ? '🔒 Kasus rahasia — ditangani BK' : $r->judul }}</b><small>{{ $mod['label'] ?? $r->jenis }}{{ $r->kategori && ! \App\Services\BkService::isMasked(auth()->user(), $r) ? ' · '.$r->kategori : '' }} · {{ \App\Support\Dates::human($r->tanggal) }}</small></span>
-                    @if($r->status)<span @class(['badge', 'b-warn' => $r->status === 'Proses', 'b-ok' => $r->status === 'Selesai'])>{{ $r->status }}</span>@endif
-                </a>
-            @endforeach
-            @endif
-        </div>
-        @endif
 
         @if($canParent)
         <div class="card"><h2>Akses Portal Wali Murid</h2>

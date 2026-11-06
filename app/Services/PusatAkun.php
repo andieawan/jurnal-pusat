@@ -44,7 +44,7 @@ class PusatAkun
                 \Illuminate\Support\Facades\DB::table('pusat_state')->where('kunci', 'dc:'.$user->pusat_uuid)->delete();
                 Audit::log('Akses Dipulihkan Pusat', 'Akun Guru', $user->nama, 'Akun diaktifkan kembali karena akses dipulihkan di Pusat');
             } else {
-                return [null, 'Akun Anda dinonaktifkan di Absensi. Hubungi administrator.'];
+                return [null, 'Akun Anda dinonaktifkan di Jurnal. Hubungi administrator.'];
             }
         }
 
@@ -69,7 +69,7 @@ class PusatAkun
 
         $roles = $peran;
         if (in_array('superadmin', $user->roles ?? [], true)) {
-            $roles[] = 'superadmin'; // superadmin hanya diatur di Absensi
+            $roles[] = 'superadmin'; // superadmin hanya diatur di Jurnal
             $roles = array_values(array_unique($roles));
         }
         $dulu = collect($user->roles ?? [])->sort()->values()->all();
@@ -138,7 +138,7 @@ class PusatAkun
     /**
      * Wali kelas mengikuti Pusat: kelas yang punya wali di Pusat diberikan ke akun milik pegawai tersebut
      * (akun lain yang masih tercatat sebagai wali kelas itu dilepas). Kelas tanpa wali di Pusat, atau wali yang
-     * belum punya akun di Absensi, dibiarkan seperti pengaturan lokal.
+     * belum punya akun di Jurnal, dibiarkan seperti pengaturan lokal.
      *
      * @return int jumlah akun yang berubah
      */

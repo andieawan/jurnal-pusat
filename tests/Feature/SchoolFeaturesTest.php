@@ -126,7 +126,7 @@ class SchoolFeaturesTest extends TestCase
     public function test_admin_can_apply_pending_database_updates_without_ssh(): void
     {
         $this->actingAs($this->admin)->post('/admin/perbarui-database')->assertSessionHas('success', 'Database sudah versi terbaru.');
-        \Illuminate\Support\Facades\DB::table('migrations')->where('migration', '2026_09_30_000100_add_bk_and_parent_contact')->delete();
+        \Illuminate\Support\Facades\DB::table('migrations')->where('migration', '2026_09_30_000100_add_parent_contact')->delete();
         $this->actingAs($this->admin)->get('/admin/guru')->assertSee('pembaruan database');
         $this->actingAs($this->admin)->get('/admin/pengaturan')->assertSee('Perbarui Database Sekarang');
         $this->actingAs($this->wali)->post('/admin/perbarui-database')->assertForbidden();

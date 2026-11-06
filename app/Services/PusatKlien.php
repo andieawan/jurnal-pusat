@@ -30,12 +30,12 @@ class PusatKlien
     }
 
     /**
-     * Kontak orang tua diubah di Absensi → diteruskan ke Pusat (izin "siswa_kontak") agar semua aplikasi memakai nomor yang sama.
+     * Kontak orang tua diubah di Jurnal → diteruskan ke Pusat (izin "siswa_kontak") agar semua aplikasi memakai nomor yang sama.
      * Melempar UserError berpesan jelas bila gagal (perubahan tidak disimpan).
      */
     /**
-     * Kontak orang tua diubah di Absensi → diteruskan ke Pusat (izin "siswa_kontak").
-     * Pusat tidak bisa dihubungi → disimpan di Absensi dan diantrekan, dikirim otomatis nanti. @return bool true = langsung terkirim
+     * Kontak orang tua diubah di Jurnal → diteruskan ke Pusat (izin "siswa_kontak").
+     * Pusat tidak bisa dihubungi → disimpan di Jurnal dan diantrekan, dikirim otomatis nanti. @return bool true = langsung terkirim
      */
     public static function kontakOrtu(string $uuid, ?string $telp, ?string $nama, string $petugas): bool
     {

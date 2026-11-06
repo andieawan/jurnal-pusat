@@ -8,7 +8,7 @@ use App\Services\ImportService;
 use App\Support\Xlsx;
 use Illuminate\Http\Request;
 
-/** Impor massal (Kelas, Mapel, Siswa, Guru & Staf, Pasangan Mapel) dengan template unduhan. */
+/** Impor massal (data induk, riwayat absensi & nilai) dengan template unduhan. */
 class ImportController extends Controller
 {
     public function index()
@@ -31,18 +31,8 @@ class ImportController extends Controller
         if (! in_array(strtolower($f->getClientOriginalExtension()), ['xlsx', 'csv', 'txt'], true)) {
             throw new UserError('Format berkas harus .xlsx atau .csv.');
         }
-        if ($type === 'absensi') {
+        if (in_array($type, ['absensi', 'nilai'], true)) {
             [$hdr, $rows] = $this->mergeSheets(Xlsx::readAllSheets($f->getRealPath(), $f->getClientOriginalName()));
-        } elseif ($type === 'nilai') {
-            // Dibaca menurut urutan kolom: judul tiap sheet dibuang (sheet lama kadang berjudul keliru).
-            $hdr = [];
-            $rows = [];
-            foreach (Xlsx::readAllSheets($f->getRealPath(), $f->getClientOriginalName()) as $sheet) {
-                array_shift($sheet);
-                foreach ($sheet as $r) {
-                    $rows[] = $r;
-                }
-            }
         } else {
             [$hdr, $rows] = Xlsx::readWithHeader($f->getRealPath(), $f->getClientOriginalName());
         }
@@ -51,7 +41,7 @@ class ImportController extends Controller
         return redirect()->route('admin.import')->with('import_result', ['type' => $type, 'title' => ImportService::types()[$type]['title']] + $r);
     }
 
-    /** Gabungkan semua sheet yang punya kolom Kelas & Tanggal; kolom disusun ulang mengikuti sheet pertama yang cocok. */
+    /** Gabungkan semua sheet yang punya kolom Kelas & Tanggal (lembar Petunjuk & Daftar Siswa terlewati); kolom disusun ulang mengikuti sheet pertama yang cocok. */
     private function mergeSheets(array $sheets): array
     {
         $hdr = null;

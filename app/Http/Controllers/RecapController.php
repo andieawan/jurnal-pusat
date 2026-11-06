@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\SchoolClass;
-use App\Services\BkService;
 use App\Services\SchoolReports;
 use App\Support\Dates;
 use App\Support\TahunAjaran;
@@ -16,7 +15,7 @@ class RecapController extends Controller
     private function params(Request $r): array
     {
         $u = $this->me();
-        $all = BkService::seesAll($u);
+        $all = $u->hasRole('bk', 'kepsek', 'admin', 'superadmin');
         $classes = $all ? SchoolClass::orderBy('name')->get() : SchoolClass::whereKey($u->kelas_wali_id ?? -1)->get();
         abort_if($classes->isEmpty(), 403, 'Rekap semester tersedia untuk Wali Kelas, Guru BK, Kepala Sekolah, dan Administrator.');
         $classId = (int) ($r->query('class') ?: ($u->kelas_wali_id ?? $classes->first()->id));

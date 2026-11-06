@@ -10,7 +10,7 @@ class Attendance extends Model
     use UsesSequenceId;
 
     public const STATUS = ['H' => 'Hadir', 'I' => 'Izin', 'S' => 'Sakit', 'A' => 'Alpa'];
-    public const VIA = ['guru' => 'Guru', 'wali' => 'Wali Kelas', 'ketua_kelas_delegasi' => 'Ketua Kelas', 'bk_manual' => 'BK Manual', 'upload_hardcopy' => 'Upload Hardcopy'];
+    public const VIA = ['guru' => 'Guru', 'wali' => 'Wali Kelas', 'ketua_kelas_delegasi' => 'Ketua Kelas', 'bk_manual' => 'BK Manual', 'upload_hardcopy' => 'Upload Hardcopy', 'impor' => 'Impor Data Lama'];
 
     protected $table = 'attendance';
     public $timestamps = false;

@@ -24,8 +24,7 @@ class KosongkanData extends Command
 
     /** Urutan: anak dulu, induk belakangan. */
     private const TABEL = [
-        'attendance' => 'Presensi', 'grade_values' => 'Nilai', 'grade_activities' => 'Kegiatan nilai', 'bk_records' => 'Catatan BK',
-        'mutasi_siswa' => 'Mutasi siswa', 'tu_surat' => 'Surat TU', 'staff_attendance' => 'Absen pegawai',
+        'attendance' => 'Presensi', 'grade_values' => 'Nilai', 'grade_activities' => 'Kegiatan nilai',
         'teacher_subject_class_pairing' => 'Pasangan mapel', 'ketua_kelas_tokens' => 'Tautan ketua kelas',
         'parent_access_tokens' => 'Tautan orang tua', 'class_board_tokens' => 'Tautan papan kelas', 'delegation_tokens' => 'Tautan delegasi',
         'students' => 'Siswa', 'classes' => 'Kelas', 'subjects' => 'Mapel', 'jurusan' => 'Jurusan', 'pusat_webhook' => 'Catatan webhook',

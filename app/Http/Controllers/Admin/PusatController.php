@@ -87,10 +87,10 @@ class PusatController extends Controller
         $s = $hasil['siswa'] ?? [];
         $k = $hasil['kelas'] ?? [];
         foreach (array_filter([
-            ! empty($k['ambigu']) ? 'Nama kelas kembar di Absensi (dilewati): '.implode(', ', $k['ambigu']).'.' : null,
+            ! empty($k['ambigu']) ? 'Nama kelas kembar di Jurnal (dilewati): '.implode(', ', $k['ambigu']).'.' : null,
             ! empty($k['hilang']) ? 'Kelas tidak ada lagi di Pusat (dibiarkan): '.implode(', ', $k['hilang']).'.' : null,
-            ! empty($s['ambigu']) ? 'NIS kembar di Absensi (dilewati): '.implode(', ', array_slice($s['ambigu'], 0, 10)).'.' : null,
-            ! empty($s['hanya_lokal']) ? $s['hanya_lokal'].' siswa aktif di Absensi belum ada di Pusat (tidak diubah).' : null,
+            ! empty($s['ambigu']) ? 'NIS kembar di Jurnal (dilewati): '.implode(', ', array_slice($s['ambigu'], 0, 10)).'.' : null,
+            ! empty($s['hanya_lokal']) ? $s['hanya_lokal'].' siswa aktif di Jurnal belum ada di Pusat (tidak diubah).' : null,
         ]) as $w) {
             $hasil['peringatan'][] = $w;
         }

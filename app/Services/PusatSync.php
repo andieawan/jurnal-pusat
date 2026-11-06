@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Menarik data induk (jurusan, kelas, siswa) dari Pusat ke Absensi.
+ * Menarik data induk (jurusan, kelas, siswa) dari Pusat ke Jurnal.
  *
  * Simulasi dan penerapan memakai logika yang SAMA: semua perubahan dijalankan di dalam transaksi
  * lalu dibatalkan bila hanya simulasi. Tidak ada yang dihapus: siswa yang hilang/keluar di Pusat
@@ -40,7 +40,7 @@ class PusatSync
         try {
             $mapel = PusatKlien::semua('mapel');
         } catch (RuntimeException $e) {
-            $mapel = null; // izin "mapel" belum dicentang di Pusat → daftar mapel tetap dikelola di Absensi
+            $mapel = null; // izin "mapel" belum dicentang di Pusat → daftar mapel tetap dikelola di Jurnal
         }
         try {
             $akun = PusatKlien::semua('akun', '/api/v1/akun');
@@ -50,7 +50,7 @@ class PusatSync
         try {
             $pengampu = $mapel === null ? null : PusatKlien::semua('pengampu');
         } catch (RuntimeException $e) {
-            $pengampu = null; // izin "pengampu" belum dicentang → Pasangan Mapel tetap diatur di Absensi
+            $pengampu = null; // izin "pengampu" belum dicentang → Pasangan Mapel tetap diatur di Jurnal
         }
 
         $aktif = collect($tahun)->firstWhere('aktif', true);
@@ -206,7 +206,7 @@ class PusatSync
             }
             if (! $s) {
                 if (self::mapelBk($m) && ! \App\Models\Subject::find($bkId = (int) config('absensi.bk_subject_id'))) {
-                    $data['id'] = $bkId; // fitur BK di Absensi memakai ID ini
+                    $data['id'] = $bkId; // fitur BK di Jurnal memakai ID ini
                 }
                 \App\Models\Subject::create($data + ['pusat_uuid' => $m['uuid']]);
                 $this->hasil['mapel']['baru']++;
@@ -230,7 +230,7 @@ class PusatSync
         $sisa = $perNama->flatten()->filter(fn ($s) => (int) $s->id !== $bk && $s->aktif)->pluck('name')->all();
         $this->hasil['mapel']['hanya_lokal'] = $sisa;
         if ($sisa) {
-            $this->hasil['peringatan'][] = 'Mapel di Absensi yang belum ada di Pusat (tetap dipakai, tambahkan di Pusat agar tertaut): '.implode(', ', array_slice($sisa, 0, 15)).'.';
+            $this->hasil['peringatan'][] = 'Mapel di Jurnal yang belum ada di Pusat (tetap dipakai, tambahkan di Pusat agar tertaut): '.implode(', ', array_slice($sisa, 0, 15)).'.';
         }
     }
 
@@ -297,8 +297,8 @@ class PusatSync
         }
         foreach (array_filter([
             $h['tertunda'] ? $h['tertunda'].' pengampu menunggu gurunya masuk Absensi lewat Pusat (dipasang otomatis saat login pertama).' : null,
-            $h['tanpa_mapel'] ? $h['tanpa_mapel'].' pengampu memakai mapel yang belum ada di Absensi.' : null,
-            $h['hanya_lokal'] ? $h['hanya_lokal'].' pasangan mapel hanya ada di Absensi (tidak diubah; tambahkan di Pusat agar tertaut, lalu hapus yang lokal).' : null,
+            $h['tanpa_mapel'] ? $h['tanpa_mapel'].' pengampu memakai mapel yang belum ada di Jurnal.' : null,
+            $h['hanya_lokal'] ? $h['hanya_lokal'].' pasangan mapel hanya ada di Jurnal (tidak diubah; tambahkan di Pusat agar tertaut, lalu hapus yang lokal).' : null,
         ]) as $w) {
             $this->hasil['peringatan'][] = $w;
         }
@@ -314,7 +314,7 @@ class PusatSync
 
         foreach ($baris as $k) {
             $c = $perUuid->get($k['uuid']);
-            // Hanya kelas tahun ajaran aktif (atau yang sudah tertaut) yang dibawa ke Absensi.
+            // Hanya kelas tahun ajaran aktif (atau yang sudah tertaut) yang dibawa ke Jurnal.
             if (! $c && ($k['tahun_ajaran'] ?? null) !== $tahunAktif) {
                 continue;
             }

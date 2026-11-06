@@ -105,21 +105,4 @@ class ApiTulisBkTest extends TestCase
         $this->assertNull(Attendance::where('student_id', 1)->value('recorded_by'));
     }
 
-    public function test_menu_bk_dialihkan_bila_bk_url_diisi(): void
-    {
-        $admin = \App\Models\User::create(['username' => 'adm', 'nama' => 'Adm', 'password_hash' => 'h', 'roles' => ['admin'], 'is_active' => true]);
-        config(['absensi.bk_url' => 'https://bk.example.test']);
-        $this->actingAs($admin)->get('/bk/presensi')->assertRedirect('https://bk.example.test/presensi');
-        $this->get('/bk/catatan/kasus')->assertRedirect('https://bk.example.test/catatan/kasus');
-        $this->get('/bk')->assertRedirect('https://bk.example.test');
-    }
-
-    public function test_menu_tu_dan_absen_mandiri_dialihkan_bila_tu_url_diisi(): void
-    {
-        $admin = \App\Models\User::create(['username' => 'adm2', 'nama' => 'Adm', 'password_hash' => 'h', 'roles' => ['admin'], 'is_active' => true]);
-        config(['absensi.tu_url' => 'https://tu.example.test']);
-        $this->actingAs($admin)->get('/tu/surat/masuk')->assertRedirect('https://tu.example.test/surat/masuk');
-        $this->get('/tu/mutasi')->assertRedirect('https://tu.example.test/mutasi');
-        $this->get('/tu')->assertRedirect('https://tu.example.test');
-    }
 }

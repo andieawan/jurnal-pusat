@@ -41,6 +41,22 @@ class AdminService
         }
     }
 
+    /** Akun Administrator pertama (perintah absensi:admin dan DatabaseSeeder). */
+    public static function createAdmin(string $username, string $password): User
+    {
+        Sequence::atLeast('users', 10);
+        $u = User::create([
+            'username' => $username, 'password_hash' => Passwords::make($password), 'nama' => config('absensi.admin.nama'),
+            'roles' => ['superadmin', 'admin'], 'subjects' => [], 'classes' => [], 'is_active' => true,
+        ]);
+        if (! SchoolSetting::find(1)) {
+            SchoolSetting::put(['school_name' => config('absensi.school_name'), 'tahun_ajaran' => '', 'semester' => 'Ganjil', 'kepsek_nama' => '', 'bk_nama' => '', 'backup_retention_weeks' => 8]);
+        }
+        Audit::log('Instalasi', 'Sistem', 'Sistem', "Akun Administrator pertama \"$username\" dibuat");
+
+        return $u;
+    }
+
     public static function addTeacher(User $actor, array $in): User
     {
         $username = strtolower(trim((string) ($in['username'] ?? '')));
@@ -115,7 +131,7 @@ class AdminService
         // dan perubahan lokal tidak tertimpa sinkron berikutnya. Kontak orang tua tetap boleh dilengkapi di sini.
         if (\App\Services\PusatKlien::kelolaSiswa()) {
             if ($s === null) {
-                throw new UserError('Data siswa dikelola Pusat Sekolah: tambahkan siswa di Pusat (atau Mutasi Masuk di aplikasi TU). Siswa baru tersalin otomatis ke Absensi.');
+                throw new UserError('Data siswa dikelola Pusat Sekolah: tambahkan siswa di Pusat (atau Mutasi Masuk di aplikasi TU). Siswa baru tersalin otomatis ke Jurnal.');
             }
             if ($s->pusat_uuid !== null && (trim((string) $in['nama']) !== $s->nama || ($in['jk'] ?? $s->jk) !== $s->jk
                 || (int) $in['class_id'] !== (int) $s->class_id || ($in['status'] ?? $s->status) !== $s->status)) {
@@ -136,7 +152,7 @@ class AdminService
         if ($s && $s->pusat_uuid !== null && PusatKlien::kelolaSiswa() && (array_key_exists('telp_ortu', $data) || array_key_exists('nama_ortu', $data))
             && ($data['telp_ortu'] !== $s->telp_ortu || $data['nama_ortu'] !== $s->nama_ortu)) {
             if (! PusatKlien::kontakOrtu($s->pusat_uuid, $data['telp_ortu'], $data['nama_ortu'], $actor->nama)) { // ditolak → UserError
-                session()->flash('warning', 'Pusat Sekolah sedang tidak bisa dihubungi. Kontak orang tua sudah disimpan di Absensi dan akan dikirim ke Pusat otomatis.');
+                session()->flash('warning', 'Pusat Sekolah sedang tidak bisa dihubungi. Kontak orang tua sudah disimpan di Jurnal dan akan dikirim ke Pusat otomatis.');
             }
         }
         if ($s) {
@@ -206,7 +222,7 @@ class AdminService
     public static function importStudents(User $actor, array $hdr, array $rows): array
     {
         if (\App\Services\PusatKlien::kelolaSiswa()) {
-            throw new UserError('Data siswa dikelola Pusat Sekolah: impor siswa dilakukan di Pusat, lalu tersalin otomatis ke Absensi.');
+            throw new UserError('Data siswa dikelola Pusat Sekolah: impor siswa dilakukan di Pusat, lalu tersalin otomatis ke Jurnal.');
         }
         [$ok, $skip] = DB::transaction(fn () => self::importStudentRows($actor, $hdr, $rows));
         Audit::log('Impor Siswa', 'Siswa', $actor->nama, "$ok siswa ditambahkan, ".count($skip).' baris dilewati');
@@ -233,24 +249,14 @@ class AdminService
 
     public static function saveSettings(User $actor, array $in): void
     {
-        $staff = [];
-        if (! empty($in['staff_form']) && \App\Support\DbUpdate::selfReady()) {
-            $radius = (int) ($in['staff_radius'] ?? 0);
-            $lat = ($in['staff_lat'] ?? '') === '' ? null : (float) $in['staff_lat'];
-            $lng = ($in['staff_lng'] ?? '') === '' ? null : (float) $in['staff_lng'];
-            if ($radius > 0 && ($lat === null || $lng === null)) {
-                throw new UserError('Isi koordinat sekolah (atau klik "Pakai lokasi saya sekarang") sebelum mengaktifkan batas radius.');
-            }
-            $staff = ['staff_mandiri' => ! empty($in['staff_mandiri']), 'staff_jam_masuk' => ($in['staff_jam_masuk'] ?? '') ?: '07:15',
-                'staff_lat' => $lat, 'staff_lng' => $lng, 'staff_radius' => $radius ?: null];
-        }
+        $extra = [];
         if (! empty($in['pw_form']) && \App\Support\DbUpdate::pwReady()) {
-            $staff += ['pw_mode' => ($in['pw_mode'] ?? 'aturan') === 'bebas' ? 'bebas' : 'aturan', 'pw_min' => max(1, min(64, (int) ($in['pw_min'] ?? 8))),
+            $extra += ['pw_mode' => ($in['pw_mode'] ?? 'aturan') === 'bebas' ? 'bebas' : 'aturan', 'pw_min' => max(1, min(64, (int) ($in['pw_min'] ?? 8))),
                 'pw_huruf' => ! empty($in['pw_huruf']), 'pw_angka' => ! empty($in['pw_angka']), 'pw_simbol' => ! empty($in['pw_simbol'])];
         }
         if (! empty($in['att_form']) && \App\Support\DbUpdate::attReady()) {
             foreach (\App\Support\AttentionPolicy::DEFAULTS as $k => $def) {
-                $staff['att_'.$k] = max(1, min(100, (int) ($in['att_'.$k] ?? $def)));
+                $extra['att_'.$k] = max(1, min(100, (int) ($in['att_'.$k] ?? $def)));
             }
         }
         $profil = PusatKlien::aktif() ? ProfilPusat::semua() : [];
@@ -262,7 +268,7 @@ class AdminService
         if (PusatKlien::kelolaSiswa() && PusatKlien::baca('semester') !== null) {
             $in['semester'] = SchoolSetting::current()->semester; // semester diatur di Pusat
         }
-        SchoolSetting::put($staff + [
+        SchoolSetting::put($extra + [
             'school_name' => trim($in['school_name']),
             'tahun_ajaran' => PusatKlien::kelolaSiswa() ? (string) SchoolSetting::current()->tahun_ajaran : trim((string) ($in['tahun_ajaran'] ?? '')), // Pusat: ikut tahun aktif Pusat
             'semester' => $in['semester'], 'kepsek_nama' => trim((string) ($in['kepsek_nama'] ?? '')),

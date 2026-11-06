@@ -8,10 +8,10 @@ use App\Support\Xlsx;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
-/** Impor riwayat nilai format aplikasi lama (DataNilai = JSON {"NIS":"nilai"}). */
+/** Impor riwayat nilai lama: satu baris = nilai satu siswa; baris sekegiatan digabung. */
 class ImportNilaiTest extends TestCase
 {
-    private const HDR = ['Timestamp', 'Nama Guru', 'Mapel', 'Kelas', 'KegiatanId', 'NamaKegiatan', 'TanggalKegiatan', 'TipeSkala', 'DataNilai'];
+    private const HDR = ['Kelas', 'Mapel', 'Nama Kegiatan', 'Tanggal', 'Tipe', 'NIS', 'Nama Siswa', 'Nilai', 'Guru'];
 
     private function xlsx(array $sheets): UploadedFile
     {
@@ -21,67 +21,70 @@ class ImportNilaiTest extends TestCase
         return new UploadedFile($path, 'nilai.xlsx', null, null, true);
     }
 
-    private function imp(UploadedFile $f, bool $dry = false)
+    private function imp(array $rows, bool $dry = false)
     {
-        return $this->actingAs($this->admin)->post('/admin/impor/nilai', ['file' => $f] + ($dry ? ['dry' => 1] : []));
+        return $this->actingAs($this->admin)->post('/admin/impor/nilai', ['file' => $this->xlsx(['Data' => array_merge([self::HDR], $rows)])] + ($dry ? ['dry' => 1] : []));
     }
 
-    private function row(string $id, string $tipe, array $data, array $over = []): array
+    private function row(string $nis, string $nilai, array $over = []): array
     {
-        return array_replace(['01/10/2026 9:00:00', 'Guru', 'Matematika', 'X RPL 1', $id, 'Tugas 1', $this->daysAgo(5), $tipe, json_encode($data)], $over);
+        return array_replace(['X RPL 1', 'Matematika', 'Tugas 1', $this->daysAgo(5), 'angka', $nis, '', $nilai, $this->guru->username], $over);
     }
 
-    public function test_imports_activities_values_and_ignores_wrong_sheet_headers(): void
+    public function test_baris_sekegiatan_digabung_menjadi_satu_kegiatan(): void
     {
-        $wrongHdr = ['Timestamp', 'Nama Guru', 'Mata Pelajaran', 'Kelas', 'Tanggal', 'Hadir', 'Izin', 'Sakit', 'Alpa']; // judul keliru seperti di sheet lama
-        $this->imp($this->xlsx([
-            'A' => [self::HDR, $this->row('id-1', 'angka', ['N-1' => '80', 'N-2' => '65', 'N-3' => '0'])],
-            'B' => [$wrongHdr, $this->row('id-2', 'huruf', ['N-1' => 'a', 'N-2' => 'D'])],
-        ]));
-        $this->assertSame(2, session('import_result')['ok']);
-        $this->assertSame([], session('import_result')['skip']);
-        $a = GradeActivity::findOrFail('id-1');
-        $this->assertSame([$this->guru->id, 2, 1, 'angka'], [$a->teacher_id, $a->subject_id, $a->class_id, $a->tipe_skala]);
-        $this->assertSame(3, GradeValue::where('activity_id', 'id-1')->count());
-        $this->assertSame('0', GradeValue::where('activity_id', 'id-1')->where('student_id', 3)->value('nilai'));
-        $this->assertSame('A', GradeValue::where('activity_id', 'id-2')->where('student_id', 1)->value('nilai')); // huruf dinormalkan
-    }
-
-    public function test_dry_run_idempotent_and_existing_id_skipped(): void
-    {
-        $file = fn () => $this->xlsx(['A' => [self::HDR, $this->row('id-9', 'angka', ['N-1' => '90'])]]);
-        $this->imp($file(), true);
-        $this->assertSame(0, GradeActivity::count());
-        $this->imp($file());
-        $this->assertSame(1, GradeActivity::count());
-        $this->imp($file());
-        $this->assertSame(1, GradeActivity::count());
-        $this->assertTrue(collect(session('import_result')['skip'])->contains(fn ($m) => str_contains($m, 'sudah ada')));
-    }
-
-    public function test_bad_values_and_rows_are_reported(): void
-    {
-        $this->imp($this->xlsx(['A' => [self::HDR,
-            $this->row('b1', 'angka', ['N-1' => '101', 'N-2' => 'abc', 'N-3' => '70', 'N-999' => '80', 'N-5' => '60']), // N-5 kelas lain
-            $this->row('b2', 'huruf', ['N-1' => 'Z']),                       // tak ada nilai valid
-            $this->row('b3', 'skala', ['N-1' => '1']),                       // tipe salah
-            $this->row('b4', 'angka', ['N-1' => '1'], [2 => 'Mapel Hantu']),  // mapel tak ada
-            ['', 'G', 'Matematika', 'X RPL 1', 'b5', 'Tugas', $this->daysAgo(1), 'angka', 'bukan json'],
-        ]]));
-        $res = session('import_result');
-        $this->assertSame(1, $res['ok']);
-        $this->assertSame(1, GradeValue::where('activity_id', 'b1')->count()); // hanya N-3
-        $this->assertNull(GradeActivity::find('b2'));
-        $txt = implode("\n", $res['skip']);
-        foreach (['101', 'abc', 'N-999', 'N-5', "'Z'", 'skala', 'Mapel Hantu', 'JSON'] as $needle) {
-            $this->assertStringContainsString($needle, $txt);
+        if (! Xlsx::available()) {
+            $this->markTestSkipped('ZipArchive tidak tersedia.');
         }
+        $this->imp([
+            $this->row('N-1', '80'), $this->row('N-2', '65'), $this->row('N-3', ''), // N-3 belum mengumpulkan
+            $this->row('N-1', 'a', [2 => 'Ulangan 1', 4 => 'huruf', 8 => '']),
+        ])->assertSessionHas('import_result');
+        $this->assertSame([2, []], [session('import_result')['ok'], session('import_result')['skip']]);
+        $t1 = GradeActivity::where('nama_kegiatan', 'Tugas 1')->first();
+        $this->assertSame([$this->guru->id, 'angka', $this->daysAgo(5)], [$t1->teacher_id, $t1->tipe_skala, $t1->tanggal_kegiatan]);
+        $this->assertSame(['80', '65'], GradeValue::where('activity_id', $t1->id)->orderBy('student_id')->pluck('nilai')->all());
+        $u1 = GradeActivity::where('nama_kegiatan', 'Ulangan 1')->first();
+        $this->assertSame(['huruf', $this->admin->id], [$u1->tipe_skala, $u1->teacher_id]);
+        $this->assertSame('A', GradeValue::where('activity_id', $u1->id)->value('nilai'));
     }
 
-    public function test_page_template_and_permission(): void
+    public function test_periksa_saja_dan_kegiatan_yang_sudah_ada_tidak_dobel(): void
+    {
+        if (! Xlsx::available()) {
+            $this->markTestSkipped('ZipArchive tidak tersedia.');
+        }
+        $this->imp([$this->row('N-1', '80')], true);
+        $this->assertSame([1, 0], [session('import_result')['ok'], GradeActivity::count()]);
+        $this->imp([$this->row('N-1', '80')]);
+        $this->imp([$this->row('N-1', '90')]);
+        $this->assertSame(1, GradeActivity::count());
+        $this->assertStringContainsString('sudah ada', session('import_result')['skip'][0]);
+    }
+
+    public function test_nilai_dan_data_tidak_valid_dilewati(): void
+    {
+        if (! Xlsx::available()) {
+            $this->markTestSkipped('ZipArchive tidak tersedia.');
+        }
+        $this->imp([
+            $this->row('N-1', '120'), $this->row('N-2', 'Z', [4 => 'huruf', 2 => 'Kuis']), $this->row('N-5', '70'),
+            $this->row('N-1', '70', [0 => 'Kelas Hantu']), $this->row('N-1', '70', [1 => 'Kimia']), $this->row('N-1', '70', [4 => 'persen']),
+            $this->row('N-2', '70'), $this->row('N-2', '75'),
+        ]);
+        $r = session('import_result');
+        $this->assertSame(1, $r['ok']);
+        $teks = implode("\n", $r['skip']);
+        foreach (['bukan angka 0–100', 'bukan huruf A–E', "NIS 'N-5'", "kelas 'Kelas Hantu'", "mapel 'Kimia'", 'harus angka/huruf', 'muncul dua kali'] as $p) {
+            $this->assertStringContainsString($p, $teks);
+        }
+        $this->assertSame('70', GradeValue::value('nilai'));
+    }
+
+    public function test_halaman_template_dan_hak_akses(): void
     {
         $this->actingAs($this->admin)->get('/admin/impor')->assertOk()->assertSee('Riwayat Nilai');
         $this->actingAs($this->admin)->get('/admin/impor/nilai/template')->assertOk();
-        $this->actingAs($this->wali)->post('/admin/impor/nilai', ['file' => UploadedFile::fake()->create('x.csv', 1)])->assertForbidden();
+        $this->actingAs($this->wali)->post('/admin/impor/nilai', ['file' => UploadedFile::fake()->createWithContent('n.csv', implode(',', self::HDR))])->assertForbidden();
     }
 }

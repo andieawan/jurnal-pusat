@@ -11,17 +11,7 @@ Login username/password lama **tetap ada** sebagai cadangan.
    Simpan `client_id`, `client_secret`, `webhook_secret` yang dicetak (hanya tampil sekali).
 2. **Perbarui database Jurnal**: Admin → Pengaturan → *Perbarui Database Sekarang* (atau `php artisan migrate --force`).
    Ini hanya menambah kolom `pusat_uuid` dan dua tabel kecil; data lama tidak disentuh.
-3. *(Hanya bila Jurnal sudah berisi data sebelum disambungkan; pemasangan baru lewati langkah ini — data induk diisi di Pusat.)*
-   **Ekspor data Jurnal → Pusat**:
-   ```
-   php artisan pusat:ekspor        # hasil: storage/app/private/pusat-ekspor/1-guru.csv ... 4-akun.csv
-   ```
-   Di Pusat (Admin → Impor CSV), impor berurutan: **1-guru → 2-kelas → 3-siswa** (selalu lihat pratinjau dulu).
-   Lalu di server Pusat: `php artisan pusat:impor-akun 4-akun.csv --aplikasi=jurnal` (simulasi),
-   ulangi dengan `--terapkan`. Password sementara tiap guru ditulis ke satu berkas — bagikan lalu **hapus berkas itu**.
-   Hapus juga CSV ekspor setelah selesai (berisi data pribadi siswa).
-   Catatan: guru di Jurnal tidak punya NIP, jadi `username` dipakai sebagai ID pegawai sementara.
-4. **Isi `.env` Jurnal**, lalu `php artisan config:clear`:
+3. **Isi `.env` Jurnal**, lalu `php artisan config:clear`:
    ```
    PUSAT_ENABLED=true
    PUSAT_URL=https://pusat.sekolah.example
@@ -30,10 +20,10 @@ Login username/password lama **tetap ada** sebagai cadangan.
    PUSAT_WEBHOOK_SECRET=...
    ```
    Di balik proxy HTTPS, isi juga `TRUSTED_PROXIES` agar `redirect_uri` bersekema `https://` dan cocok dengan yang didaftarkan.
-5. **Admin → Integrasi Pusat**: *Uji Koneksi* → *Periksa Perubahan (simulasi)* → baca hasilnya → *Terapkan*.
+4. **Admin → Integrasi Pusat**: *Uji Koneksi* → *Periksa Perubahan (simulasi)* → baca hasilnya → *Terapkan*.
    Pada penerapan pertama, kelas dan siswa lama **ditautkan** ke data Pusat lewat nama kelas / NIS (tidak membuat ganda).
    Nama kembar atau NIS kembar dilewati dan dilaporkan.
-6. **Coba login** dengan satu akun guru lewat tombol *Masuk lewat Pusat* (jendela lain tetap login lokal sebagai cadangan).
+5. **Coba login** dengan satu akun guru lewat tombol *Masuk lewat Pusat* (jendela lain tetap login lokal sebagai cadangan).
 
 ## Cara kerja
 
@@ -45,12 +35,11 @@ Login username/password lama **tetap ada** sebagai cadangan.
 | Webhook | Hanya **menandai** "ada perubahan menunggu" di halaman Integrasi Pusat. Satu pengecualian demi keamanan: bila akses akun dicabut di Pusat (nonaktif / tanpa peran), akun lokal langsung dinonaktifkan. |
 | Sinkron otomatis | Opsional: `PUSAT_SINKRON_OTOMATIS=true` (+ cron `schedule:run`) menjalankan `pusat:sinkron --terapkan` tiap jam. |
 | Keluar | Keluar dari Jurnal pada sesi yang masuk lewat Pusat juga keluar dari Pusat. |
-| Tidak disinkron | Mapel, pasangan guru–mapel–kelas, wali kelas, absensi, nilai, catatan BK, surat. |
+| Tidak disinkron | Mapel, pasangan guru–mapel–kelas, wali kelas, absensi, nilai, jurnal mengajar, perangkat ajar. |
 
 ## Perintah
 
 ```
-php artisan pusat:ekspor [folder]
 php artisan pusat:sinkron                # simulasi
 php artisan pusat:sinkron --terapkan [--paksa]
 ```

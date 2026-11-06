@@ -16,9 +16,8 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        $needsInstall = rescue(fn () => ! \Illuminate\Support\Facades\Schema::hasTable('users') || ! User::query()->exists(), true, false);
 
-        return view('auth.login', ['switching' => false, 'needsInstall' => $needsInstall]);
+        return view('auth.login', ['switching' => false]);
     }
 
     public function showSwitch()
@@ -52,7 +51,7 @@ class AuthController extends Controller
 
     /**
      * Ganti ke akun dari Pusat: keluar dari Absensi DAN dari Pusat, lalu langsung ke halaman masuk Pusat
-     * sehingga akun tujuan bisa dipilih (akun Pusat tidak punya password di Absensi).
+     * sehingga akun tujuan bisa dipilih (akun Pusat tidak punya password di Jurnal).
      */
     public function switchPusat(Request $request)
     {

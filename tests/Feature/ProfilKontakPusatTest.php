@@ -80,14 +80,6 @@ class ProfilKontakPusatTest extends TestCase
         $this->assertSame('Pak Budi', $s->fresh()->nama_ortu);
     }
 
-    public function test_absen_mandiri_disembunyikan_bila_tu_terpisah(): void
-    {
-        config(['pusat.enabled' => false]);
-        $this->actingAs($this->admin)->get('/admin/pengaturan')->assertOk()->assertSee('Absen Mandiri Guru');
-        config(['absensi.tu_url' => 'https://tu.test']);
-        $this->actingAs($this->admin)->get('/admin/pengaturan')->assertOk()->assertDontSee('Absen Mandiri Guru')->assertSee('diatur di');
-    }
-
     public function test_semester_mengikuti_pusat(): void
     {
         SchoolSetting::put(['school_name' => 'SMK', 'semester' => 'Ganjil']);

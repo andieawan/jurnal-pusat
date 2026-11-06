@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [SecurityHeaders::class]);
         // Proxy tepercaya (TRUSTED_PROXIES) dipasang di AppServiceProvider dari config: callback ini berjalan
         // sebelum .env dimuat, sehingga env() di sini selalu kosong.
-        $middleware->alias(['api.key' => \App\Http\Middleware\AuthenticateApiKey::class, 'bk.alih' => \App\Http\Middleware\AlihkanKeBk::class, 'tu.alih' => \App\Http\Middleware\AlihkanKeTu::class, 'induk.pusat' => \App\Http\Middleware\IndukPusat::class]);
+        $middleware->alias(['api.key' => \App\Http\Middleware\AuthenticateApiKey::class, 'induk.pusat' => \App\Http\Middleware\IndukPusat::class]);
         $middleware->prepend(\App\Http\Middleware\LegacyLinks::class);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));

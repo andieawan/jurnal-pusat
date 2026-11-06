@@ -21,7 +21,7 @@
     </div>
 @endif
 @php
-    // Bila tersambung ke Pusat, data induk diimpor di Pusat; di sini tinggal yang memang milik Absensi.
+    // Bila tersambung ke Pusat, data induk diimpor di Pusat; di sini tinggal yang memang milik Jurnal.
     $pusat = \App\Services\PusatKlien::kelolaSiswa();
     $diPusat = $pusat ? array_merge(['kelas', 'guru', 'siswa'], \App\Models\Subject::dariPusat() ? ['mapel'] : [], \App\Services\PusatPengampu::aktif() ? ['pasangan'] : []) : [];
     $jenis = array_values(array_diff(['kelas', 'mapel', 'guru', 'siswa', 'pasangan', 'absensi', 'nilai'], $diPusat));
@@ -37,7 +37,7 @@
 @if($diPusat)
 <div class="alert alert-info"><span class="alert-ic" aria-hidden="true">i</span><span class="alert-txt">
     <b>Sudah diimpor di Pusat Sekolah:</b> {{ collect($diPusat)->map(fn ($k) => $types[$k]['title'])->implode(', ') }}.
-    Isi lewat Pusat lalu tekan Sinkron; akun guru dibuat di Pusat dan terbentuk di Absensi saat guru pertama kali masuk.
+    Isi lewat Pusat lalu tekan Sinkron; akun guru dibuat di Pusat dan terbentuk di Jurnal saat guru pertama kali masuk.
     @if($pusatUrl !== '')<a class="btn btn-sm" style="margin-left:6px" href="{{ $pusatUrl }}/admin/impor" target="_blank" rel="noopener">Buka Impor di Pusat ↗</a>@endif
 </span></div>
 @endif
