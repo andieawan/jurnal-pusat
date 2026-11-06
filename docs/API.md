@@ -39,7 +39,7 @@ Daftar memakai `page` & `per_page` (default 100, maks 200; kehadiran maks 500). 
 
 ## Contoh
 ```
-curl -H "Authorization: Bearer ak_xxx" "https://absensi.smkibupakusari.sch.id/api/v1/siswa?kelas_id=3&per_page=50"
+curl -H "Authorization: Bearer ak_xxx" "https://jurnal.smkibupakusari.sch.id/api/v1/siswa?kelas_id=3&per_page=50"
 ```
 
 ## Catatan operasional

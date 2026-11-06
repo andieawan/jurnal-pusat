@@ -3,7 +3,7 @@
 > **Urutan:** pasang dulu **Pusat Sekolah** (repo `pusat-sekolah`, `docs/PENYIAPAN-VM.md`), lalu panduan ini. Menyambung ke Pusat ada di **langkah 12b**; tanpa Pusat aplikasi tetap berjalan normal.
 
 Panduan ini untuk **Ubuntu 22.04 / 24.04** dengan **Nginx + PHP-FPM + MariaDB**. Semua perintah dijalankan sebagai
-user biasa yang punya `sudo` (bukan langsung `root`). Ganti `absensi.smkibupakusari.sch.id` dengan domain/IP server Anda.
+user biasa yang punya `sudo` (bukan langsung `root`). Ganti `jurnal.smkibupakusari.sch.id` dengan domain/IP server Anda.
 
 > Ringkasnya: pasang paket → buat database → ambil kode → isi `.env` → `migrate` → Nginx → HTTPS → cron & backup.
 
@@ -11,7 +11,7 @@ user biasa yang punya `sudo` (bukan langsung `root`). Ganti `absensi.smkibupakus
 | Hal | Keterangan |
 |---|---|
 | Server | Ubuntu 22.04/24.04, RAM ≥ 1 GB, akses SSH + `sudo` |
-| Alamat | **Domain** (mis. `absensi.smkibupakusari.sch.id` → IP server) *atau* hanya IP lokal (lihat langkah 9) |
+| Alamat | **Domain** (mis. `jurnal.smkibupakusari.sch.id` → IP server) *atau* hanya IP lokal (lihat langkah 9) |
 | HTTPS | Disarankan. **Wajib** untuk Absen Saya berbasis lokasi (GPS) dan untuk memasang aplikasi ke HP (PWA) |
 
 ## 1. Perbarui sistem & firewall
@@ -48,9 +48,9 @@ sudo mariadb
 ```
 Di prompt MariaDB (ganti `PasswordKuat123!`):
 ```sql
-CREATE DATABASE absensi_siswa CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'absensi'@'localhost' IDENTIFIED BY 'PasswordKuat123!';
-GRANT ALL PRIVILEGES ON absensi_siswa.* TO 'absensi'@'localhost';
+CREATE DATABASE jurnal_guru CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'jurnal'@'localhost' IDENTIFIED BY 'PasswordKuat123!';
+GRANT ALL PRIVILEGES ON jurnal_guru.* TO 'jurnal'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -60,9 +60,9 @@ EXIT;
 > **`vendor/` sudah ikut di repo** (dibuat dengan `composer install --no-dev`, PHP 8.3). Setelah `git clone`, langkah `composer install` boleh dilewati. Jalankan `composer install` hanya untuk menjalankan tes (butuh paket dev) atau setelah `composer.json` berubah; untuk memperbarui `vendor/` di repo, jalankan workflow **Bundel vendor** (tab Actions di GitHub).
 
 ```bash
-sudo mkdir -p /var/www/absensi && sudo chown $USER:$USER /var/www/absensi
-git clone https://github.com/andieawan/absensi-pusat.git /var/www/absensi
-cd /var/www/absensi
+sudo mkdir -p /var/www/jurnal && sudo chown $USER:$USER /var/www/jurnal
+git clone https://github.com/andieawan/jurnal-pusat.git /var/www/jurnal
+cd /var/www/jurnal
 # composer install tidak perlu: vendor/ sudah ikut di repo
 ```
 
@@ -72,7 +72,6 @@ cd /var/www/absensi
 > GitHub → Settings → Developer settings → Personal access tokens → *Fine-grained tokens* → Repository access: hanya repo ini → Permissions: **Contents = Read-only**.
 > Saat `git clone` diminta *Username* isi nama akun GitHub, *Password* isi **token** (bukan password akun). Agar `git pull` untuk pembaruan tidak meminta lagi:
 > `git config --global credential.helper store` (jalankan sebelum clone; token tersimpan di `~/.git-credentials` milik user ini). Jangan tempel token ke chat/dokumen. Alternatif: jadikan repo *Public*, atau pakai *Deploy key* (SSH).
-*(Tanpa git? Unggah `absensi-laravel13-siap-unggah.zip` ke server, `unzip` ke `/var/www/`, ganti nama foldernya menjadi `absensi`; folder `vendor/` sudah ikut, `composer install` dilewati.)*
 
 ## 5. Isi `.env`
 ```bash
@@ -82,9 +81,9 @@ nano .env
 ```
 Yang wajib diubah:
 ```ini
-APP_URL=https://absensi.smkibupakusari.sch.id
-DB_DATABASE=absensi_siswa
-DB_USERNAME=absensi
+APP_URL=https://jurnal.smkibupakusari.sch.id
+DB_DATABASE=jurnal_guru
+DB_USERNAME=jurnal
 DB_PASSWORD=PasswordKuat123!
 SESSION_SECURE_COOKIE=true        # ubah ke false BILA belum memakai HTTPS
 ```
@@ -92,7 +91,7 @@ Simpan di nano: `Ctrl+O`, `Enter`, `Ctrl+X`.
 
 ## 6. Hak akses folder
 ```bash
-cd /var/www/absensi
+cd /var/www/jurnal
 sudo chown -R $USER:www-data .
 sudo chmod -R ug+rwX storage bootstrap/cache
 sudo find storage bootstrap/cache -type d -exec chmod g+s {} \;
@@ -108,19 +107,19 @@ Opsional — isi **data contoh** untuk mencoba: `php artisan db:seed --class=Dem
 
 ## 8. Nginx
 ```bash
-sudo cp /var/www/absensi/deploy/nginx-absensi.conf /etc/nginx/sites-available/absensi
-sudo nano /etc/nginx/sites-available/absensi     # ganti server_name, lalu samakan soket PHP: `ls /run/php/` (mis. php8.5-fpm.sock)
-sudo ln -s /etc/nginx/sites-available/absensi /etc/nginx/sites-enabled/absensi
+sudo cp /var/www/jurnal/deploy/nginx-absensi.conf /etc/nginx/sites-available/jurnal
+sudo nano /etc/nginx/sites-available/jurnal     # ganti server_name, lalu samakan soket PHP: `ls /run/php/` (mis. php8.5-fpm.sock)
+sudo ln -s /etc/nginx/sites-available/jurnal /etc/nginx/sites-enabled/jurnal
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 ```
-Buka `http://absensi.smkibupakusari.sch.id` — halaman login harus muncul.
+Buka `http://jurnal.smkibupakusari.sch.id` — halaman login harus muncul.
 
 ## 9. HTTPS (pilih salah satu)
 **A. Domain publik + Let's Encrypt (paling mudah).** Port 80/443 server terbuka ke internet:
 ```bash
 sudo apt -y install certbot python3-certbot-nginx
-sudo certbot --nginx -d absensi.smkibupakusari.sch.id
+sudo certbot --nginx -d jurnal.smkibupakusari.sch.id
 ```
 Perpanjangan otomatis sudah diatur certbot (cek: `sudo certbot renew --dry-run`).
 
@@ -139,35 +138,35 @@ sudo crontab -u www-data -e
 ```
 Tambahkan satu baris:
 ```cron
-* * * * * cd /var/www/absensi && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/jurnal && php artisan schedule:run >> /dev/null 2>&1
 ```
 Backup berjalan tiap pukul 02:00 WIB ke `storage/app/backups` (otomatis menyimpan 8 minggu, bisa diubah di
 Admin → Pengaturan). Uji sekarang: `sudo -u www-data php artisan absensi:backup`.
 
 ## 11. Cadangan ke luar server (sangat disarankan)
-Salin folder backup ke VPS/komputer lain agar aman jika disk rusak. Contoh dengan `rsync` + kunci SSH (di server absensi):
+Salin folder backup ke VPS/komputer lain agar aman jika disk rusak. Contoh dengan `rsync` + kunci SSH (di server Jurnal):
 ```bash
 sudo -u www-data ssh-keygen -t ed25519 -N "" -f /var/www/.ssh/id_ed25519      # sekali saja
 sudo -u www-data ssh-copy-id -i /var/www/.ssh/id_ed25519.pub user@IP-VPS
 sudo crontab -u www-data -e
 ```
 ```cron
-30 2 * * * rsync -az --delete /var/www/absensi/storage/app/backups/ user@IP-VPS:/backup/absensi/ >> /dev/null 2>&1
+30 2 * * * rsync -az --delete /var/www/jurnal/storage/app/backups/ user@IP-VPS:/backup/jurnal/ >> /dev/null 2>&1
 ```
-Ikut cadangkan juga `.env` dan folder `storage/app/private` (scan surat BK/TU): `rsync -az /var/www/absensi/.env /var/www/absensi/storage/app/private user@IP-VPS:/backup/absensi-files/`.
+Ikut cadangkan juga `.env` dan folder `storage/app/private` (scan surat BK/TU): `rsync -az /var/www/jurnal/.env /var/www/jurnal/storage/app/private user@IP-VPS:/backup/jurnal-files/`.
 
 ## 12. Cek akhir
 - [ ] Halaman login terbuka lewat HTTPS, gembok hijau.
 - [ ] Masuk sebagai Administrator → Admin → **Pengaturan**: isi nama sekolah, tahun ajaran, Kepsek/BK.
 - [ ] Admin → **Impor Data**: unduh template, isi Kelas → Mapel → Guru & Staf → Siswa → Pasangan Mapel.
-- [ ] Login sebagai guru → buka **Absensi** → simpan satu absensi percobaan.
+- [ ] Login sebagai guru → buka **Mengajar** → simpan satu jurnal & absensi percobaan.
 - [ ] Buka dari HP → "Tambahkan ke layar utama" (PWA).
 - [ ] `sudo -u www-data php artisan absensi:backup` berhasil.
 - [ ] Hapus `ADMIN_PASSWORD` dari `.env` bila pernah diisi.
 
 ## 12b. Sambungkan ke Pusat Sekolah (opsional, bisa belakangan)
-1. Di server **Pusat**: `php artisan pusat:aplikasi-baru absensi --base-url=https://absensi.smkibupakusari.sch.id --redirect=https://absensi.smkibupakusari.sch.id/sso/callback --webhook=https://absensi.smkibupakusari.sch.id/api/pusat/webhook` — salin `client_id`, `client_secret`, `webhook_secret` (tampil sekali).
-2. Di server Absensi, isi `.env`:
+1. Di server **Pusat**: `php artisan pusat:aplikasi-baru jurnal --base-url=https://jurnal.smkibupakusari.sch.id --redirect=https://jurnal.smkibupakusari.sch.id/sso/callback --webhook=https://jurnal.smkibupakusari.sch.id/api/pusat/webhook` — salin `client_id`, `client_secret`, `webhook_secret` (tampil sekali).
+2. Di server Jurnal, isi `.env`:
    ```ini
    PUSAT_ENABLED=true
    PUSAT_URL=https://pusat.smkibupakusari.sch.id
@@ -183,14 +182,14 @@ Ikut cadangkan juga `.env` dan folder `storage/app/private` (scan surat BK/TU): 
 ## 13. Memperbarui ke versi baru
 **Cara singkat (disarankan):**
 ```bash
-cd /var/www/absensi
+cd /var/www/jurnal
 sudo bash deploy/update.sh
 ```
 Skrip ini membuat backup, `git pull`, `composer install`, `migrate`, membersihkan cache, memperbaiki izin, dan memuat ulang PHP-FPM; aplikasi otomatis kembali aktif walau ada langkah yang gagal.
 
 Cara manual (setara):
 ```bash
-cd /var/www/absensi
+cd /var/www/jurnal
 php artisan down --secret=rahasia           # opsional: mode pemeliharaan
 git pull
 composer install --no-dev --optimize-autoloader
@@ -207,7 +206,7 @@ Backup otomatis dibuat sebelum migrasi lewat tombol Admin → Pengaturan → *Pe
 Backup harian tersimpan di `storage/app/backups/absensi_*.sql` (juga bisa diunduh dari Admin → Pengaturan → Backup).
 
 ```bash
-cd /var/www/absensi
+cd /var/www/jurnal
 sudo bash deploy/restore.sh                      # pilih dari daftar backup
 sudo bash deploy/restore.sh /path/absensi_2026-10-08T01-00-00.sql   # atau berkas tertentu (mis. hasil unduhan)
 ```
@@ -219,10 +218,10 @@ Untuk berkas dari komputer: unggah dengan `scp absensi_xxx.sql user@server:/tmp/
 ## 14. Jika ada masalah
 | Gejala | Penyebab & solusi |
 |---|---|
-| **500 Server Error** | Lihat `tail -50 /var/www/absensi/storage/logs/laravel.log`. Umumnya `APP_KEY` kosong (`php artisan key:generate`), `.env` salah, atau izin folder (langkah 6) |
+| **500 Server Error** | Lihat `tail -50 /var/www/jurnal/storage/logs/laravel.log`. Umumnya `APP_KEY` kosong (`php artisan key:generate`), `.env` salah, atau izin folder (langkah 6) |
 | **502 Bad Gateway** | PHP-FPM mati/soket salah: `sudo systemctl status php*-fpm`; samakan versi di `fastcgi_pass` |
 | **404 untuk semua halaman selain `/`** | `root` Nginx harus menunjuk ke folder **`public`**, dan blok `location /` memakai `try_files … /index.php?$query_string` |
-| **Unknown database / Access denied** | `DB_*` di `.env` tidak cocok dengan langkah 3. Uji: `mariadb -u absensi -p absensi_siswa` |
+| **Unknown database / Access denied** | `DB_*` di `.env` tidak cocok dengan langkah 3. Uji: `mariadb -u jurnal -p jurnal_guru` |
 | **Permission denied … storage/logs** | Ulangi langkah 6 |
 | **Terkunci "Terlalu banyak percobaan login"** | Tunggu 15 menit atau `php artisan cache:clear` |
 | **Logout sendiri / cookie tidak tersimpan** | Situs belum HTTPS tetapi `SESSION_SECURE_COOKIE=true` → ubah ke `false` atau pasang HTTPS |

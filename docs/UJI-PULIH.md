@@ -7,9 +7,11 @@ Backup baru terbukti berguna setelah pernah berhasil dipulihkan. Lakukan **uji p
 | Aplikasi | Dibuat oleh | Lokasi | Jadwal |
 |---|---|---|---|
 | Pusat | `deploy/backup.sh` (cron `/etc/cron.d/pusat-backup`) | `/var/backups/pusat/pusat_*.sql.gz` | 01:15 |
-| Absensi | `php artisan absensi:backup` (penjadwal Laravel) | `storage/app/backups/absensi_*.sql` | 02:00 |
+| Jurnal Guru | `php artisan absensi:backup` (penjadwal Laravel) | `/var/www/jurnal/storage/app/backups/absensi_*.sql` | 02:00 |
 | BK | `deploy/backup.sh` (cron `/etc/cron.d/bk-backup`, dipasang otomatis oleh install/update) | `/var/backups/bk-pusat/` (`db_*.sql.gz` + `berkas_*.tar.gz`) | 01:30 |
 | TU | `deploy/backup.sh` (cron `/etc/cron.d/tu-backup`, dipasang otomatis oleh install/update) | `/var/backups/tu-pusat/` (`db_*.sql.gz` + `berkas_*.tar.gz`) | 01:30 |
+| PKL | `deploy/backup.sh` (cron `/etc/cron.d/pkl-backup`, dipasang otomatis oleh install/update) | `/var/backups/pkl-pusat/` (`db_*.sql.gz` + `berkas_*.tar.gz`, termasuk foto absen) | 01:45 |
+| Tanggungan | `deploy/backup.sh` (cron `/etc/cron.d/tanggungan-backup`, dipasang otomatis oleh install/update) | `/var/backups/tanggungan/` (`db_*.sql.gz` + `berkas_*.tar.gz`) | 01:45 |
 | Website | `deploy/backup.sh` (cron `/etc/cron.d/smkibu-backup`) | `/var/backups/smkibu/` (`db_*` + foto) | 01:30 |
 
 Periksa cron backup ada: `ls /etc/cron.d/`. Bila belum ada untuk Pusat/Website, lihat panduan VM masing-masing.
@@ -32,9 +34,9 @@ Uji berkas tertentu: `sudo bash deploy/uji-pulih.sh /var/backups/pusat/pusat_202
 
 ## Pemulihan sungguhan (bila data rusak/hilang)
 
-**Absensi** punya skrip lengkap (backup pengaman → mode pemeliharaan → impor → migrasi):
+**Jurnal Guru** punya skrip lengkap (backup pengaman → mode pemeliharaan → impor → migrasi):
 ```bash
-cd /var/www/absensi && sudo bash deploy/restore.sh
+cd /var/www/jurnal && sudo bash deploy/restore.sh
 ```
 
 **Pusat, BK, Website** — langkah manual:
@@ -51,7 +53,7 @@ sudo -u www-data php artisan up                     # 5. aktif lagi
 ```
 BK juga punya berkas scan surat: `sudo tar -xzf /var/backups/bk-pusat/berkas_<tanggal>.tar.gz -C /var/www/bk-pusat/storage/app`.
 
-Setelah Pusat dipulihkan, buka **Webhook → Kirim ulang semua** dan jalankan sinkron di Absensi/BK agar salinan data induk selaras.
+Setelah Pusat dipulihkan, buka **Webhook → Kirim ulang semua** dan jalankan sinkron di Jurnal, BK, TU, PKL, dan Tanggungan agar salinan data induk selaras.
 
 ## Salinan di luar server (sangat disarankan)
 
@@ -61,5 +63,5 @@ Salin rutin ke VPS cadangan, misalnya dari tiap VM:
 # /etc/cron.d/backup-luar  (sesudah backup lokal selesai)
 0 3 * * * root rsync -az --delete /var/backups/ backup@<ip-vps>:/cadangan/$(hostname)/
 ```
-Di VM Absensi, backup ada di folder aplikasi: ganti sumbernya menjadi `/var/www/absensi/storage/app/backups/`.
+Di VM Jurnal, backup ada di folder aplikasi: ganti sumbernya menjadi `/var/www/jurnal/storage/app/backups/`.
 (butuh kunci SSH tanpa password untuk user `backup` di VPS; uji pulih juga sesekali dari salinan di VPS).
