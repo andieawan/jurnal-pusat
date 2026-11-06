@@ -40,7 +40,7 @@ cd /var/www/pusat-sekolah && sudo bash deploy/update.sh
 sudo -u www-data php artisan pusat:aplikasi-baru jurnal --base-url=https://jurnal.smkibupakusari.sch.id
 ```
 
-Templat "jurnal" memberi izin yang sama dengan Absensi (data induk, mapel, pengampu, akun, login cadangan).
+Templat "jurnal" memberi izin data induk, mapel, pengampu, akun, kontak orang tua, dan login cadangan.
 Salin `client_id`, `client_secret`, dan `webhook_secret` (hanya tampil sekali) ke `.env` Jurnal:
 
 ```ini

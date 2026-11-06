@@ -58,9 +58,4 @@ class User extends Authenticatable
 
         return implode(' · ', array_map(fn ($r) => $map[$r] ?? $r, $this->roles ?? []));
     }
-
-    public function waliClass()
-    {
-        return $this->belongsTo(SchoolClass::class, 'kelas_wali_id');
-    }
 }

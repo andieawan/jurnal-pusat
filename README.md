@@ -7,8 +7,21 @@ Pemasangan di VM baru: [`docs/PASANG-VM-JURNAL.md`](docs/PASANG-VM-JURNAL.md).
 
 > **Produksi:** urutan lengkap Pusat → aplikasi ada di [runbook Pusat](https://github.com/andieawan/pusat-sekolah/blob/main/docs/PRODUKSI.md). Cek kesiapan server kapan saja: `php artisan absensi:periksa`.
 
-Aplikasi absensi & nilai siswa berbasis **Laravel 13** (PHP 8.3+). Halaman dirender di server dengan Blade;
-JavaScript hanya sedikit (tanpa npm/Vite, tanpa langkah build). Database MySQL/MariaDB (disarankan) atau SQLite.
+Dibangun dengan **Laravel 13** (PHP 8.3+). Halaman dirender di server dengan Blade; JavaScript hanya sedikit
+(tanpa npm/Vite, tanpa langkah build). Database MariaDB/MySQL (produksi) atau SQLite (tes).
+
+## Catatan untuk pengembang: nama "absensi" di dalam kode
+Jurnal Guru adalah kelanjutan aplikasi **Absensi Siswa**. Supaya data, backup, dan skrip lama tetap cocok, beberapa nama
+internal sengaja **tidak diganti**. Ini bukan kesalahan:
+
+| Yang masih bernama "absensi" | Alasan |
+|---|---|
+| `config/absensi.php`, `config('absensi.*')` | pengaturan aplikasi; mengganti nama berarti mengubah ratusan pemanggilan |
+| perintah `absensi:backup`, `absensi:admin`, `absensi:periksa`, `absensi:kosongkan-data` | dipakai cron, `deploy/*.sh`, dan panduan |
+| berkas backup `storage/app/backups/absensi_*.sql` | dikenali `deploy/restore.sh` dan aplikasi Backup Master |
+| `deploy/nginx-absensi.conf` | contoh konfigurasi Nginx untuk pemasangan manual |
+
+Kata "absensi" di menu/tampilan berarti **fitur** absensi (kehadiran siswa), bukan nama aplikasi.
 
 ## Fitur
 | Menu | Isi |
@@ -68,12 +81,14 @@ kelas); pengesahan akademik hanya oleh Wali Kelas siswa, BK, Kepsek, atau Admin;
 ## Struktur kode
 ```
 app/
-├─ Http/Controllers/        Dashboard, Attendance, Grade, Student, Bk, BkRecord, Monitor, Recap, Letter, Export, Public, Auth, Install
+├─ Http/Controllers/        Mengajar (jurnal + absensi mapel), PerangkatAjar, Dashboard, Attendance, Grade, Student, Bk, BkRecord,
+│                           Monitor, Recap, Letter, Export, Public, Auth, Install, PusatSso (login lewat Pusat)
 │  ├─ Admin/                Teacher, Student, Master (kelas & mapel), Pairing, Hardcopy, Promotion, Log, Setting
 │  └─ Tu/                   Home, Mutasi, Surat, Staff (absensi guru), Print (cetak dokumen)
 ├─ Models/                  User, SchoolClass, Subject, Student, Attendance, GradeActivity, GradeValue, Pairing, …
 ├─ Services/                Rules (aturan bisnis), Analytics, AttendanceService, GradeService, AccessService,
-│                           AdminService, BackupService, Sequence, Audit, Assignments, BkService, SchoolReports, TuService, StaffService
+│                           AdminService, BackupService, Sequence, Audit, Assignments, BkService, SchoolReports, TuService, StaffService,
+│                           Perangkat & PerangkatAi & BahanAjar (perangkat ajar), PusatKlien & PusatSync (sambungan ke Pusat)
 └─ Support/                 Dates, Passwords, Xlsx (baca/tulis .xlsx tanpa library luar), WhatsApp, TahunAjaran, BkModules
 config/absensi.php          pengaturan khusus aplikasi
 database/migrations/        skema (tabel yang sudah ada dilewati → DB versi lama langsung terpakai)
@@ -83,50 +98,11 @@ routes/web.php, console.php rute web; perintah absensi:backup, absensi:admin; ja
 tests/                      Tes PHPUnit (fitur & aturan bisnis)
 ```
 
-## Kebutuhan
-- PHP **8.3+** dengan `pdo_mysql` (atau `pdo_sqlite`), `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `fileinfo`, `zip` (untuk Excel)
-- Composer 2 (atau unggah folder `vendor/` yang sudah jadi)
-- MySQL/MariaDB (database kosong sudah dibuat)
-
-> **Ubuntu Server?** Ikuti panduan lengkap langkah demi langkah di [`docs/UBUNTU.md`](docs/UBUNTU.md) (Nginx + PHP-FPM + MariaDB + HTTPS + backup).
-
-## Instalasi (VPS / hosting dengan SSH)
-
-> Coba dulu di komputer Windows: [`docs/PENYIAPAN-LOKAL.md`](docs/PENYIAPAN-LOKAL.md).
-
-```bash
-git clone https://github.com/andieawan/absensi-pusat.git absensi && cd absensi
-composer install --no-dev --optimize-autoloader
-cp .env.example .env && php artisan key:generate
-# isi DB_* serta ADMIN_USERNAME / ADMIN_PASSWORD (min. 10 karakter) di .env
-php artisan migrate --force && php artisan db:seed --force
-php artisan config:cache && php artisan route:cache && php artisan view:cache
-```
-Arahkan document root web server ke folder **`public/`**. Pastikan `storage/` dan `bootstrap/cache/` dapat ditulis web server.
-Setelah login pertama: hapus `ADMIN_PASSWORD` dari `.env`, lalu ganti password lewat menu **Password**.
-
-Cron (backup harian 02.00 WIB lewat penjadwal Laravel):
-```
-* * * * * cd /path/absensi && php artisan schedule:run >> /dev/null 2>&1
-```
-Tanpa cron pun backup tetap berjalan otomatis tiap 24 jam saat ada yang login.
-
-## Instalasi di cPanel tanpa SSH
-1. Di komputer lain (atau ambil paket rilis yang sudah berisi `vendor/`), jalankan `composer install --no-dev`.
-2. Unggah seluruh folder proyek ke `/home/USER/absensi` (**di luar** `public_html`).
-3. Pindahkan isi `absensi/public/` ke `public_html/`, lalu ubah tiga baris di `public_html/index.php`:
-   `__DIR__.'/../storage/…'` → `__DIR__.'/../absensi/storage/…'`, `__DIR__.'/../vendor/…'` → `__DIR__.'/../absensi/vendor/…'`,
-   `__DIR__.'/../bootstrap/app.php'` → `__DIR__.'/../absensi/bootstrap/app.php'`.
-   (Atau, bila cPanel mengizinkan, cukup ubah document root domain ke `absensi/public`.)
-4. Salin `.env.example` → `.env`; isi `APP_KEY` (buat dengan `php artisan key:generate --show` di komputer mana pun, atau
-   `base64:` + 32 byte acak), `DB_*`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`.
-5. Buka **`https://domain-anda/pasang`** → klik *Pasang Sekarang*. Tabel dibuat dan akun admin pertama dibuat.
-   Halaman ini otomatis tertutup begitu sudah ada akun.
-
-## Memperbarui ke versi baru (cPanel tanpa SSH)
-Unggah/timpa berkas aplikasi (kecuali `.env` dan `storage/`), lalu login sebagai Admin → **Pengaturan** → klik
-**Perbarui Database Sekarang** (muncul otomatis bila ada perubahan struktur; backup dibuat lebih dulu).
-Dengan SSH cukup `php artisan migrate --force`.
+## Pemasangan
+- **VM sekolah (disarankan):** [`docs/PASANG-VM-JURNAL.md`](docs/PASANG-VM-JURNAL.md) — satu skrip `deploy/install.sh`.
+- **Manual di Ubuntu** (tanpa skrip): [`docs/UBUNTU.md`](docs/UBUNTU.md).
+- **Coba di komputer Windows:** [`docs/PENYIAPAN-LOKAL.md`](docs/PENYIAPAN-LOKAL.md).
+- Pembaruan: `sudo bash deploy/update.sh`. Folder `vendor/` ikut di repo, jadi server tidak perlu `composer install`.
 
 ## Aplikasi di HP (PWA)
 Aplikasi bisa dipasang ke layar utama HP/laptop seperti aplikasi biasa (ikon sendiri, layar penuh, pintasan "Isi Absensi" & "Input Nilai"):
@@ -136,12 +112,6 @@ Aplikasi bisa dipasang ke layar utama HP/laptop seperti aplikasi biasa (ikon sen
 Syarat: situs memakai **HTTPS**. Halaman selalu diambil langsung dari server (data siswa tidak disimpan di HP); bila tidak ada
 internet, muncul halaman "Tidak ada koneksi". Nama aplikasi mengikuti nama sekolah di Pengaturan. Setelah mengubah
 `public/sw.js`, naikkan `VERSION` di dalamnya agar HP mengambil versi baru.
-
-## Pindah dari versi lama (React/Node atau PHP murni)
-Arahkan `.env` ke database MySQL yang sama lalu jalankan `php artisan migrate` (atau `/pasang` tidak diperlukan karena
-sudah ada akun). Nama tabel & kolom **tidak berubah**, tabel yang sudah ada dilewati. Password lama (format
-`sha256:salt:hash`) tetap bisa dipakai login dan otomatis diganti ke bcrypt saat login berhasil. Tabel lama `sessions`
-dan `login_attempts` tidak dipakai lagi (sesi disimpan di `storage/`) dan boleh dihapus.
 
 ## Impor siswa
 Kolom wajib: **NIS, Nama Siswa, JK, Kelas**. Kolom opsional: **Nama Ortu**, **No HP Ortu** (format bebas: `0812…`,
@@ -193,10 +163,6 @@ persis seperti di bawah. Tanpa terminal (cPanel): lihat tabel "Tanpa terminal" p
 *Reset password pengguna* = Admin → Akun Guru → (buka akun) → **Reset** · *Pasang pertama* = buka `/pasang`.
 
 > Lupa password Administrator dan tidak ada admin lain? Buat akun baru: `php artisan absensi:admin admin2`.
-
-## Pengganti fitur Google
-Login Google, Google Docs, dan Google Sheets dari versi React tidak dipakai. Penggantinya: **surat siap cetak**
-(`Ctrl+P` → *Simpan sebagai PDF*; nama Kepsek/BK diambil dari Pengaturan, alamat/NIP diisi manual) dan **unduhan Excel (.xlsx)**.
 
 ## Keamanan
 CSRF & escaping bawaan Laravel, password bcrypt, sesi dicabut saat password diganti/direset atau akun dinonaktifkan,

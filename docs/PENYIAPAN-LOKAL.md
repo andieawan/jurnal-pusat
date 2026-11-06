@@ -1,4 +1,4 @@
-# Mencoba Absensi Siswa di komputer pribadi (Windows)
+# Mencoba Jurnal Guru di komputer pribadi (Windows)
 
 Pasang **Pusat** lebih dulu dan siapkan alat (Laragon, Git) mengikuti `docs/PENYIAPAN-LOKAL.md` di repo `pusat-sekolah`. Aplikasi ini dijalankan di **port 8001**; semua perintah di Terminal Laragon, satu per satu.
 Selalu pakai alamat `http://127.0.0.1:8001` (bukan `localhost`).
@@ -9,8 +9,8 @@ Selalu pakai alamat `http://127.0.0.1:8001` (bukan `localhost`).
 
 ```bash
 cd C:\laragon\www
-git clone https://github.com/andieawan/absensi-pusat.git
-cd absensi-pusat
+git clone https://github.com/andieawan/jurnal-pusat.git
+cd jurnal-pusat
 composer install
 ```
 (Repo privat: *Password* = token GitHub, lihat panduan VM.)
@@ -48,18 +48,18 @@ php artisan serve --port=8001
 Buka http://127.0.0.1:8001/login
 
 ## 5. Sambungkan ke Pusat (opsional)
-Cara tercepat: dari folder **Pusat**, satu perintah mendaftarkan Absensi dan menuliskan kredensial ke `.env` Absensi ini:
+Cara tercepat: dari folder **Pusat**, satu perintah mendaftarkan Jurnal dan menuliskan kredensial ke `.env` Jurnal ini:
 ```bash
-php artisan pusat:siapkan-lokal --absensi-url=http://127.0.0.1:8001 --env-absensi=C:\laragon\www\absensi-pusat\.env --demo
+php artisan pusat:siapkan-lokal --jurnal-url=http://127.0.0.1:8001 --env-jurnal=C:\laragon\www\jurnal-pusat\.env --demo
 ```
-(Ganti alamat dan path sesuai milik Anda; `--demo` menambah guru/kelas/siswa contoh.) Lalu di folder Absensi:
+(Ganti alamat dan path sesuai milik Anda; `--demo` menambah guru/kelas/siswa contoh.) Lalu di folder Jurnal:
 ```bash
 php artisan migrate
 php artisan config:clear
 ```
-Masuk ke Absensi → Admin → **Pusat** → *Uji koneksi* → *Periksa* (simulasi) → *Terapkan*. Tombol "Masuk lewat Pusat" di halaman login bisa dipakai dengan akun superadmin Pusat.
+Masuk ke Jurnal → Admin → **Pusat** → *Uji koneksi* → *Periksa* (simulasi) → *Terapkan*. Tombol "Masuk lewat Pusat" di halaman login bisa dipakai dengan akun superadmin Pusat.
 
-Cara manual (tanpa perintah di atas): `php artisan pusat:aplikasi-baru absensi --base-url=http://127.0.0.1:8001` di Pusat, lalu isi `PUSAT_ENABLED=true`, `PUSAT_URL`, `PUSAT_CLIENT_ID`, `PUSAT_CLIENT_SECRET`, `PUSAT_WEBHOOK_SECRET` di `.env` Absensi.
+Cara manual (tanpa perintah di atas): `php artisan pusat:aplikasi-baru jurnal --base-url=http://127.0.0.1:8001` di Pusat, lalu isi `PUSAT_ENABLED=true`, `PUSAT_URL`, `PUSAT_CLIENT_ID`, `PUSAT_CLIENT_SECRET`, `PUSAT_WEBHOOK_SECRET` di `.env` Jurnal.
 
 Masalah umum (database, cookie, redirect_uri, port): lihat bagian terakhir `docs/PENYIAPAN-LOKAL.md` di repo `pusat-sekolah`.
 
