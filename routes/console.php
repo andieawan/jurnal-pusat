@@ -70,3 +70,16 @@ if (config('pusat.enabled')) {
 if (config('pusat.enabled') && config('pusat.sinkron_otomatis')) {
     Schedule::command('pusat:sinkron --terapkan')->hourly()->withoutOverlapping();
 }
+
+// Ada perubahan dari Pusat (webhook data induk / tombol "Sinkronkan" di Pusat): tarik dalam ±1 menit tanpa menunggu admin.
+// Paling sering sekali per 5 menit (mis. bila sinkron ditahan pengaman penonaktifan massal — selesaikan lewat Admin → Integrasi Pusat).
+if (config('pusat.enabled')) {
+    Schedule::command('pusat:sinkron --terapkan')->everyMinute()->withoutOverlapping()->when(function () {
+        try {
+            return (int) \App\Services\PusatKlien::baca('perubahan_menunggu', 0) > 0
+                && \Illuminate\Support\Facades\Cache::add('pusat-sinkron-diminta', 1, 300);
+        } catch (\Throwable) {
+            return false;
+        }
+    });
+}

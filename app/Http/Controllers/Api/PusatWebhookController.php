@@ -49,7 +49,7 @@ class PusatWebhookController extends Controller
                 PusatAkun::buatDariPusat($data); // akun baru di Pusat langsung ada di sini
                 PusatAkun::tautPegawai($data);
                 PusatAkun::terapkanSandi($data); // login cadangan
-            } elseif (preg_match('/^(siswa|kelas|jurusan|tahun_ajaran|mapel|pengampu)\./', $event)) {
+            } elseif ($event === 'sinkron.diminta' || preg_match('/^(siswa|kelas|jurusan|tahun_ajaran|mapel|pengampu)\./', $event)) {
                 if (str_starts_with($event, 'tahun_ajaran.')) {
                     \App\Services\PusatSync::terapkanSemester($data); // semester langsung berlaku, tanpa menunggu sinkron
                 }
