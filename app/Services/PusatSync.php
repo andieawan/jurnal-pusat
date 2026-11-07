@@ -30,6 +30,23 @@ class PusatSync
     /** @return array hasil ringkas untuk ditampilkan/dicetak */
     public function jalankan(bool $terapkan, bool $paksa = false): array
     {
+        try {
+            $h = $this->jalankanInti($terapkan, $paksa);
+        } catch (\Throwable $e) {
+            if ($terapkan) {
+                PusatKlien::lapor(false, [], $e->getMessage());
+            }
+            throw $e;
+        }
+        if ($terapkan) {
+            PusatKlien::lapor(true, $h); // Pusat menampilkan "selesai sinkron" + notifikasi admin
+        }
+
+        return $h;
+    }
+
+    private function jalankanInti(bool $terapkan, bool $paksa): array
+    {
         PusatAntrean::kirim(); // perubahan tertunda dikirim dulu agar tidak tertimpa data lama dari Pusat
         Sambungan::tarikAman(); // sambungan antar-aplikasi ikut diperbarui setiap sinkron
         ProfilPusat::tarikAman(); // nama sekolah, kepala sekolah, guru BK

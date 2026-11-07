@@ -142,4 +142,21 @@ class PusatKlien
 
         return $row ? $row->nilai : $bawaan;
     }
+
+    /**
+     * Lapor hasil sinkron ke Pusat (kolom "Sinkron terakhir" di menu Aplikasi Pusat + notifikasi admin).
+     * Tidak pernah menggagalkan sinkron; Pusat versi lama yang belum punya jalurnya cukup membalas 404.
+     */
+    public static function lapor(bool $ok, array $hasil = [], string $galat = '', ?string $pemicu = null): void
+    {
+        try {
+            self::http()->timeout(5)->post('/api/v1/sinkron/laporan', [
+                'ok' => $ok,
+                'pemicu' => $pemicu ?? (app()->runningInConsole() ? 'otomatis' : 'manual'),
+                'hasil' => $hasil,
+                'galat' => mb_substr($galat, 0, 1000),
+            ]);
+        } catch (\Throwable) {
+        }
+    }
 }
