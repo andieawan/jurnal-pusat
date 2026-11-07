@@ -19,7 +19,7 @@ class PusatWebhookController extends Controller
     public function __invoke(Request $request)
     {
         if (! PusatKlien::aktif() || ! PusatKlien::siap() || config('pusat.webhook_secret') === '') {
-            return response()->json(['ok' => false], 404);
+            return response()->json(['ok' => false, 'error' => 'integrasi_belum_aktif'], 404); // PUSAT_* di .env belum lengkap
         }
         $badan = $request->getContent();
         $waktu = (int) $request->header('X-Pusat-Timestamp');
