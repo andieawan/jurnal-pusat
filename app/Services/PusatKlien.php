@@ -159,4 +159,27 @@ class PusatKlien
         } catch (\Throwable) {
         }
     }
+
+    /**
+     * Tombol "Sinkronkan" di Pusat: sinkron penuh LANGSUNG setelah jawaban webhook terkirim ke Pusat
+     * (PHP-FPM menutup koneksi dulu, jadi Pusat tidak ikut menunggu). Gagal → tanda "perlu sinkron" tetap ada
+     * dan penjadwal mencoba lagi ±1 menit kemudian. Hanya satu sinkron langsung berjalan pada satu waktu.
+     */
+    public static function sinkronSetelahJawab(callable $jalankan): void
+    {
+        app()->terminating(function () use ($jalankan) {
+            if (! \Illuminate\Support\Facades\Cache::add('pusat-sinkron-langsung', 1, 600)) {
+                return;
+            }
+            @set_time_limit(600);
+            ignore_user_abort(true);
+            try {
+                $jalankan();
+            } catch (\Throwable $e) {
+                report($e); // hasil gagal sudah dilaporkan ke Pusat oleh PusatSync
+            } finally {
+                \Illuminate\Support\Facades\Cache::forget('pusat-sinkron-langsung');
+            }
+        });
+    }
 }
