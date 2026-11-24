@@ -332,4 +332,12 @@ class PerangkatAjarTest extends TestCase
         config(['absensi.ai.key' => '']);
         $this->post(route('perangkat.ai', [$d, 'lkpd']))->assertSessionHas('error');
     }
+
+    public function test_peran_mgmp_tanpa_mapel_tetap_melihat_menu_dan_petunjuk(): void
+    {
+        $m = User::create(['username' => 'mgmpbaru', 'nama' => 'Tim MGMP Baru', 'password_hash' => Passwords::make('password123'), 'roles' => ['mgmp'],
+            'is_active' => true, 'subjects' => [], 'classes' => []]);
+        $this->actingAs($m)->get('/perangkat')->assertOk()->assertSee('belum punya mapel')->assertSee('Pengampu Mapel')->assertDontSee('+ Draf MGMP');
+        $this->actingAs($this->wali)->get('/perangkat')->assertOk()->assertSee('+ Draf MGMP')->assertDontSee('belum punya mapel');
+    }
 }

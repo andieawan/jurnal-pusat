@@ -47,7 +47,8 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Gate::define('admin', fn (User $u) => $u->isAdmin());
-        Gate::define('perangkat', fn (User $u) => $u->isAdmin() || $u->hasRole('kepsek') || \App\Services\Assignments::subjects($u)->isNotEmpty());
+        // peran MGMP selalu melihat menunya (walau mapel belum diatur) supaya tahu apa yang kurang
+        Gate::define('perangkat', fn (User $u) => $u->isAdmin() || $u->hasRole('kepsek', 'mgmp') || \App\Services\Assignments::subjects($u)->isNotEmpty());
         Gate::define('lihat-sekolah', fn (User $u) => $u->hasRole('kepsek', 'superadmin', 'admin', 'bk'));
 
         RateLimiter::for('publik', fn (Request $r) => Limit::perMinute(60)->by($r->ip()));

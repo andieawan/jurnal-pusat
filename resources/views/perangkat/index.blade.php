@@ -13,6 +13,12 @@
     </div>
 </div>
 
+@if($mgmpTanpaMapel)
+<div class="alert alert-warn" role="status"><span class="alert-ic" aria-hidden="true">!</span><span class="alert-txt"><b>Akun Anda berperan MGMP, tetapi belum punya mapel.</b>
+    Tombol <i>+ Draf MGMP</i> muncul untuk mapel yang Anda ampu. Minta admin mengisi <b>Pengampu Mapel</b> untuk Anda di Pusat
+    (Administrasi → Pengampu Mapel), lalu tunggu sinkron ±1 menit atau tekan Sinkronkan di Pusat. Admin Jurnal juga bisa mengisi mapel di Admin → Akun Guru.</span></div>
+@endif
+
 @if($bisaPeriksa)
 <div class="card card-tight" id="periksa">
     <div class="list-tools"><b>Menunggu pemeriksaan</b><small class="mut">diajukan guru · {{ $periksa->count() }}</small></div>

@@ -77,7 +77,7 @@ class PerangkatAjarController extends Controller
         $muat = fn ($q) => $q->with(['mapel', 'kelas', 'guru'])->orderByDesc('updated_at');
 
         return view('perangkat.index', [
-            'set' => $set, 'mgmp' => $mgmp->isNotEmpty(), 'semua' => $semua, 'bisaBuat' => $this->mapelGuru($u)->isNotEmpty(), 'bisaPeriksa' => $this->bisaPeriksa(),
+            'set' => $set, 'mgmp' => $mgmp->isNotEmpty(), 'mgmpTanpaMapel' => $u->hasRole('mgmp') && $mgmp->isEmpty(), 'semua' => $semua, 'bisaBuat' => $this->mapelGuru($u)->isNotEmpty(), 'bisaPeriksa' => $this->bisaPeriksa(),
             'periksa' => $this->bisaPeriksa() ? $muat(PerangkatAjar::where(['jenis' => 'guru', 'pengesahan' => 'diajukan'])->where('user_id', '!=', $u->id))->get() : collect(),
             'draf' => $mgmp->isEmpty() ? collect() : $muat(PerangkatAjar::where('jenis', 'mgmp')->whereIn('subject_id', $mgmp->pluck('id')))->limit(60)->get(),
             'siap' => $muat(PerangkatAjar::where(['jenis' => 'mgmp', 'status' => 'siap', 'tahun' => (string) $set->tahun_ajaran, 'semester' => (string) $set->semester])
