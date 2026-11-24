@@ -337,7 +337,8 @@ class PerangkatAjarTest extends TestCase
     {
         $m = User::create(['username' => 'mgmpbaru', 'nama' => 'Tim MGMP Baru', 'password_hash' => Passwords::make('password123'), 'roles' => ['mgmp'],
             'is_active' => true, 'subjects' => [], 'classes' => []]);
-        $this->actingAs($m)->get('/perangkat')->assertOk()->assertSee('belum punya mapel')->assertSee('Pengampu Mapel')->assertDontSee('+ Draf MGMP');
-        $this->actingAs($this->wali)->get('/perangkat')->assertOk()->assertSee('+ Draf MGMP')->assertDontSee('belum punya mapel');
+        $this->actingAs($m)->get('/perangkat')->assertOk()->assertSee('belum punya mapel')->assertSee('Pengampu Mapel')
+            ->assertDontSee('href="'.route('perangkat.create').'"', false); // tombol + Draf MGMP belum ada
+        $this->actingAs($this->wali)->get('/perangkat')->assertOk()->assertSee('href="'.route('perangkat.create').'"', false)->assertDontSee('belum punya mapel');
     }
 }
