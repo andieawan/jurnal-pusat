@@ -1,13 +1,120 @@
 PHPUnit 12.5.38 by Sebastian Bergmann and contributors.
 
-Runtime:       PHP 8.5.12
+Runtime:       PHP 8.5.13
 Configuration: /home/runner/work/jurnal-pusat/jurnal-pusat/phpunit.xml
 
-...............................................................  63 / 195 ( 32%)
-............................................................... 126 / 195 ( 64%)
-............................................................... 189 / 195 ( 96%)
-......                                                          195 / 195 (100%)
+...............................................................  63 / 196 ( 32%)
+............................................................... 126 / 196 ( 64%)
+...F........................................................... 189 / 196 ( 96%)
+.......                                                         196 / 196 (100%)
 
-Time: 00:08.759, Memory: 79.00 MB
+Time: 00:11.413, Memory: 79.00 MB
 
-OK (195 tests, 1520 assertions)
+There was 1 failure:
+
+1) Tests\Feature\PerangkatAjarTest::test_peran_mgmp_tanpa_mapel_tetap_melihat_menu_dan_petunjuk
+Failed asserting that '<!doctype html>\n
+<html lang="id">\n
+<head>\n
+    <meta charset="utf-8">\n
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n
+    <meta name="csrf-token" content="VHKKncmbJ9y2RmIlVKWEMATLH4aa3x9aaCkPk0No">\n
+    <title>Perangkat Ajar · SMK Islam Bustanul Ulum Pakusari</title>\n
+    <script>document.documentElement.classList.add('js')</script>\n
+    <link rel="stylesheet" href="https://jurnal.smkibupakusari.sch.id/assets/app.css?v=1795479187">\n
+    <link rel="manifest" href="https://jurnal.smkibupakusari.sch.id/manifest.webmanifest">\n
+    <meta name="theme-color" content="#143f2a">\n
+    <meta name="mobile-web-app-capable" content="yes">\n
+    <meta name="apple-mobile-web-app-capable" content="yes">\n
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">\n
+    <meta name="apple-mobile-web-app-title" content="Jurnal Guru">\n
+    <link rel="apple-touch-icon" href="https://jurnal.smkibupakusari.sch.id/icons/apple-touch-icon.png?v=1795479187">\n
+    <link rel="icon" type="image/png" sizes="192x192" href="https://jurnal.smkibupakusari.sch.id/icons/icon-192.png?v=1795479187">\n
+    <meta name="sw-url" content="https://jurnal.smkibupakusari.sch.id/sw.js">\n
+    </head>\n
+<body data-app="jurnal" class="has-bottom-nav">\n
+<a class="skip" href="#isi">Lompat ke isi halaman</a>\n
+\n
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">\n
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>\n
+    <symbol id="i-check" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8.5 12.5 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>\n
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>\n
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.9.7 3.2 2.5 3.5 5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>\n
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>\n
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.6 4.3 4.3 0 0 1 19.5 10c0 5.6-7.5 10-7.5 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>\n
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>\n
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>\n
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>\n
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 8h8M8 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>\n
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 2.5h8l5 5V20a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20V4a1.5 1.5 0 0 1 1-1.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 2.5V8h5M8.5 13h7M8.5 17h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>\n
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>\n
+</svg>\n
+            <header class="nav"><div class="nav-in">\n
+        <a class="brand" href="https://jurnal.smkibupakusari.sch.id"><img class="logo-img" src="https://jurnal.smkibupakusari.sch.id/icons/icon-192.png?v=1795479187" alt="" width="38" height="38"><span><b>Jurnal Guru</b><small>SMK Islam Bustanul Ulum Pakusari</small></span></a>\n
+        <nav class="tabs" aria-label="Menu utama">\n
+                            <a href="https://jurnal.smkibupakusari.sch.id" ><svg class="ic"><use href="#i-home"/></svg>Beranda</a>\n
+                            <a href="https://jurnal.smkibupakusari.sch.id/mengajar" ><svg class="ic"><use href="#i-book"/></svg>Mengajar</a>\n
+                            <a href="https://jurnal.smkibupakusari.sch.id/absensi" ><svg class="ic"><use href="#i-check"/></svg>Absensi</a>\n
+                            <a href="https://jurnal.smkibupakusari.sch.id/nilai" ><svg class="ic"><use href="#i-star"/></svg>Nilai</a>\n
+                            <a href="https://jurnal.smkibupakusari.sch.id/siswa" ><svg class="ic"><use href="#i-users"/></svg>Siswa</a>\n
+                            <a href="https://jurnal.smkibupakusari.sch.id/perangkat"  class="on" aria-current="page" ><svg class="ic"><use href="#i-file"/></svg>Perangkat Ajar</a>\n
+                    </nav>\n
+        <details class="acct" data-close-outside>\n
+            <summary aria-label="Menu akun Tim MGMP Baru"><span class="avatar" aria-hidden="true">T</span><span class="acct-name">Tim MGMP Baru<small>MGMP</small></span><span class="caret" aria-hidden="true">▾</span></summary>\n
+            <div class="acct-menu" role="menu">\n
+                <div class="acct-head"><b>Tim MGMP Baru</b><small>@mgmpbaru · MGMP</small></div>\n
+                                    <a class="only-mobile" role="menuitem" href="https://jurnal.smkibupakusari.sch.id/perangkat"><svg class="ic"><use href="#i-file"/></svg>Perangkat Ajar</a>\n
+                                <button type="button" class="menu-btn hide" id="pwa-install" role="menuitem">📲 Pasang Aplikasi</button>\n
+                                <a role="menuitem" href="https://jurnal.smkibupakusari.sch.id/password">🔑 Ganti Password</a>\n
+                <a role="menuitem" href="https://jurnal.smkibupakusari.sch.id/ganti-akun">🔄 Ganti Akun</a>\n
+                <form method="post" action="https://jurnal.smkibupakusari.sch.id/logout"><input type="hidden" name="_token" value="VHKKncmbJ9y2RmIlVKWEMATLH4aa3x9aaCkPk0No" autocomplete="off"><button class="menu-btn danger" role="menuitem">⎋ Keluar</button></form>\n
+            </div>\n
+        </details>\n
+    </div></header>\n
+\n
+    \n
+    <nav class="bottom-nav" aria-label="Menu utama (HP)">\n
+                    <a href="https://jurnal.smkibupakusari.sch.id" ><svg class="ic"><use href="#i-home"/></svg><span>Beranda</span></a>\n
+                    <a href="https://jurnal.smkibupakusari.sch.id/mengajar" ><svg class="ic"><use href="#i-book"/></svg><span>Mengajar</span></a>\n
+                    <a href="https://jurnal.smkibupakusari.sch.id/absensi" ><svg class="ic"><use href="#i-check"/></svg><span>Absensi</span></a>\n
+                    <a href="https://jurnal.smkibupakusari.sch.id/nilai" ><svg class="ic"><use href="#i-star"/></svg><span>Nilai</span></a>\n
+                    <a href="https://jurnal.smkibupakusari.sch.id/siswa" ><svg class="ic"><use href="#i-users"/></svg><span>Siswa</span></a>\n
+                                        <button type="button" data-open-acct class="on"><svg class="ic"><use href="#i-menu"/></svg><span>Lainnya</span></button>\n
+            </nav>\n
+    <main id="isi" class="wrap"  tabindex="-1">\n
+        <div class="head">\n
+    <div>\n
+        <h1>Perangkat Ajar</h1>\n
+        <small>Ambil draf MGMP untuk kelas Anda, atau susun sendiri dari templat / isian kosong. Perangkat bisa diajukan ke kepala sekolah, dicetak berkop, dan diunduh Word.</small>\n
+    </div>\n
+    <div class="row">\n
+                                    </div>\n
+</div>\n
+\n
+<div class="alert alert-warn" role="status"><span class="alert-ic" aria-hidden="true">!</span><span class="alert-txt"><b>Akun Anda berperan MGMP, tetapi belum punya mapel.</b>\n
+    Tombol <i>+ Draf MGMP</i> muncul untuk mapel yang Anda ampu. Minta admin mengisi <b>Pengampu Mapel</b> untuk Anda di Pusat\n
+    (Administrasi → Pengampu Mapel), lalu tunggu sinkron ±1 menit atau tekan Sinkronkan di Pusat. Admin Jurnal juga bisa mengisi mapel di Admin → Akun Guru.</span></div>\n
+\n
+\n
+<div class="card card-tight">\n
+    <div class="list-tools"><b>Draf MGMP siap dipakai — Ganjil </b><small class="mut">untuk mapel yang Anda ampu</small></div>\n
+            <div class="empty">Belum ada draf MGMP yang siap untuk mapel Anda semester ini.</div>\n
+    </div>\n
+\n
+\n
+<div class="card card-tight">\n
+    <div class="list-tools"><b>Perangkat ajar saya</b></div>\n
+            <div class="empty">Belum ada. Ambil draf MGMP di atas untuk kelas Anda .</div>\n
+    </div>\n
+</main>\n
+<script src="https://jurnal.smkibupakusari.sch.id/assets/app.js?v=1795479187"></script>\n
+</body>\n
+</html>\n
+' [UTF-8](length: 9505) does not contain "+ Draf MGMP" [ASCII](length: 11).
+
+/home/runner/work/jurnal-pusat/jurnal-pusat/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:46
+/home/runner/work/jurnal-pusat/jurnal-pusat/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:812
+/home/runner/work/jurnal-pusat/jurnal-pusat/tests/Feature/PerangkatAjarTest.php:340
+
+FAILURES!
+Tests: 196, Assertions: 1524, Failures: 1.
